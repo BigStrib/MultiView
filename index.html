@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MultiView - Master Multiplayer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Slide-out sidebar (menu is completely off-screen when closed) -->
+  <aside id="sidebar" aria-label="Video sources panel">
+    <div id="sidebar-content">
+      <h2>Video Sources</h2>
+
+      <!-- URL section -->
+      <section class="sidebar-section">
+        <div class="sidebar-section-label">Video URL</div>
+        <input
+          id="urlInput"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Paste a YouTube, Twitch, Kick, Rumble, Vimeo URL"
+        />
+        <div class="sidebar-buttons">
+          <button class="primary" type="button" id="addUrlBtn">
+            <span class="btn-icon" aria-hidden="true">➕</span>
+            <span class="btn-label">Add From URL</span>
+          </button>
+        </div>
+      </section>
+
+      <div class="divider">or</div>
+
+      <!-- Embed code section -->
+      <section class="sidebar-section">
+        <div class="sidebar-section-label">Embed Code</div>
+        <textarea
+          id="embedInput"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Paste full iframe/embed code (YouTube, Vimeo, Rumble, etc.)"
+        ></textarea>
+        <div class="sidebar-buttons">
+          <button type="button" id="addEmbedBtn">
+            <span class="btn-icon" aria-hidden="true">📎</span>
+            <span class="btn-label">Add From Embed</span>
+          </button>
+        </div>
+      </section>
+
+      <p class="sidebar-note">
+        • The menu is smart-paste: when you paste a URL or embed code,
+        the video is added and the menu closes automatically.<br />
+        • Hover any video to move it (top-left), close it (top-right),
+        or resize it from the corners. Aspect ratio is preserved.
+      </p>
+    </div>
+  </aside>
+
+  <!-- Invisible edge tab that reveals on hover and toggles sidebar -->
+  <button
+    id="sidebar-tab"
+    type="button"
+    title="Open video menu"
+    aria-label="Open video menu"
+  >
+    <span class="tab-icon" aria-hidden="true">☰</span>
+    <span class="tab-text">Add</span>
+  </button>
+
+  <!-- Main workspace -->
+  <main id="workspace">
+    <!-- Homepage / welcome overlay (hidden once first video is added) -->
+    <section id="welcome" aria-label="Welcome">
+      <div id="welcome-inner">
+        <h1>MultiView</h1>
+        <p>
+          Combine multiple live streams and videos on one dark, flexible canvas.
+          Add YouTube, Twitch, Kick, Rumble, Vimeo, or any custom iframe embed.
+        </p>
+        <ul>
+          <li>Move your mouse to the left edge to discover the hidden tab.</li>
+          <li>Click the tab to open the menu, then paste a URL or embed code.</li>
+          <li>Hover a video to reveal controls: move (top-left), close (top-right).</li>
+          <li>
+            Resize using the corner squares; current size appears at the top
+            while resizing.
+          </li>
+          <li>No rounded corners and no shadows — just clean, sharp frames.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- External JS -->
+  <script src="script.js" defer></script>
+</body>
+</html>

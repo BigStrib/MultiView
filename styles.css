@@ -1,0 +1,490 @@
+/* =========================
+   Base / Theme
+   ========================= */
+
+:root {
+  --bg-main: #050508;
+  --bg-panel: #131318;
+  --bg-video: #000000;
+  --border: #2c2c33;
+  --accent: #b3353a;        /* dark red accent */
+  --accent-soft: rgba(179, 53, 58, 0.3);
+  --text-main: #e4e4e7;
+  --text-dim: #9a9aa3;
+  --danger: #ff4b4b;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  background: radial-gradient(circle at top, #1b1b22 0, #050508 55%, #000 100%);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* =========================
+   Workspace / Welcome Screen
+   ========================= */
+
+#workspace {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#welcome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+#welcome-inner {
+  max-width: 640px;
+  pointer-events: auto;
+}
+
+#welcome h1 {
+  margin: 0 0 0.75rem;
+  font-size: 2.2rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#welcome p {
+  margin: 0 0 1rem;
+  color: var(--text-dim);
+}
+
+#welcome ul {
+  margin: 1rem auto 0;
+  padding-left: 1.2rem;
+  max-width: 460px;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+#welcome li + li {
+  margin-top: 0.25rem;
+}
+
+/* =========================
+   Sidebar Panel
+   ========================= */
+
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 320px;
+  max-width: 80vw;
+  height: 100vh;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%); /* fully off screen when closed */
+  transition: transform 0.25s ease-out;
+  z-index: 1000;
+}
+
+body.sidebar-open #sidebar {
+  transform: translateX(0);
+}
+
+#sidebar-content {
+  height: 100%;
+  padding: 1rem 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#sidebar h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Sidebar sections */
+
+.sidebar-section {
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-section-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 0.3rem;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #09090d;
+  color: var(--text-main);
+  padding: 0.45rem 0.55rem;
+  font-size: 0.85rem;
+  outline: none;
+  border-radius: 0;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 160px;
+}
+
+/* Sidebar buttons */
+
+.sidebar-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: #15151b;
+  color: var(--text-main);
+  font-size: 0.8rem;
+  padding: 0.42rem 0.7rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+button.primary {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.btn-icon {
+  font-size: 0.9em;
+}
+
+.btn-label {
+  font-size: 0.78rem;
+}
+
+.divider {
+  text-align: center;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  margin: 0.25rem 0;
+}
+
+.sidebar-note {
+  margin-top: auto;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  line-height: 1.4;
+}
+
+/* =========================
+   Sidebar Edge Tab
+   ========================= */
+
+#sidebar-tab {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translate(-90%, -50%); /* hides most of it off the left edge */
+  width: 42px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.01);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-left: none;
+  cursor: pointer;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0; /* invisible until hovered */
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.25s ease-out;
+  z-index: 1001;
+}
+
+/* Reveal the tab only when hovering exactly over it */
+#sidebar-tab:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+}
+
+/* When sidebar is open, attach tab to its edge */
+body.sidebar-open #sidebar-tab {
+  transform: translate(280px, -50%);
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+}
+
+.tab-icon {
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.tab-text {
+  font-size: 0.7rem;
+}
+
+/* =========================
+   Video Windows
+   ========================= */
+
+.video-window {
+  position: absolute;
+  background: var(--bg-video);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: 0;          /* no rounded corners */
+  box-shadow: none;          /* no shadows */
+  min-width: 240px;
+  min-height: 135px;         /* 16:9 baseline */
+  cursor: default;
+}
+
+/* Toolbar (top overlay with move + close + size) */
+
+.video-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s linear;
+  font-size: 0.75rem;
+  z-index: 5;
+}
+
+/* Show toolbar while hovering, moving, or resizing */
+.video-window:hover .video-toolbar,
+.video-window.moving .video-toolbar,
+.video-window.resizing .video-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Move button (use as icon-style button) */
+
+.move-handle {
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: #101014;
+  color: var(--text-main);
+  font-size: 0.8rem;
+  padding: 0.1rem 0.45rem;
+  cursor: move;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Close button */
+
+.close-btn {
+  border-radius: 0;
+  border: 1px solid var(--danger);
+  background: #290000;
+  color: var(--danger);
+  font-size: 0.9rem;
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Size indicator (center top) */
+
+.size-indicator {
+  flex: 1;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s linear;
+}
+
+.video-window.resizing .size-indicator {
+  opacity: 1;
+}
+
+/* Video content area */
+
+.video-content {
+  position: absolute;
+  inset: 0;
+}
+
+.video-content iframe,
+.video-content embed,
+.video-content video {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;          /* no rounded corners */
+  box-shadow: none;          /* no shadows */
+  display: block;
+  background: #000;
+}
+
+/* =========================
+   Resize Handles
+   ========================= */
+
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #d0d0d0;
+  border: 1px solid #000;
+  box-sizing: border-box;
+  z-index: 6;
+  opacity: 0;                /* hidden by default */
+  pointer-events: none;      /* disabled by default */
+  transition: opacity 0.08s linear;
+}
+
+/* Positions */
+.resize-nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+.resize-ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+.resize-sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+.resize-se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+
+/* Show resize handles only on hover */
+.video-window:hover .resize-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Hide handles while moving or actively resizing */
+.video-window.moving .resize-handle,
+.video-window.resizing .resize-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =========================
+   Delete Confirmation Overlay
+   ========================= */
+
+.confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  display: none;             /* shown via JS */
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.confirm-box {
+  background: #15151b;
+  border: 1px solid var(--border);
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+  max-width: 260px;
+  text-align: center;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.confirm-box p {
+  margin: 0 0 0.7rem;
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.confirm-yes {
+  border-color: var(--danger);
+  background: #350000;
+  color: var(--danger);
+}
+
+.confirm-no {
+  border-color: var(--border);
+  background: #181818;
+  color: var(--text-main);
+}
