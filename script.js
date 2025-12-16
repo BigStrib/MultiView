@@ -1,5 +1,5 @@
 // app.js
-// MultiView – multi-provider embed workspace with drag/resize
+// MultiView – multi-provider embed workspace with smooth drag/resize
 
 "use strict";
 
@@ -22,7 +22,10 @@ const TWITCH_PARENT_DOMAIN = "bigstrib.github.io";
 const TWITCH_ORIGIN = "https://bigstrib.github.io/MultiView/";
 
 let zCounter = 10;
+
+// Drag / resize state
 let activeAction = null; // { type: 'move'|'resize', win, ... }
+let rafId = null;        // requestAnimationFrame id
 
 // ==========================
 // Sidebar Helpers
@@ -40,7 +43,6 @@ function toggleSidebar() {
   document.body.classList.toggle("sidebar-open");
 }
 
-// Toggle sidebar from edge tab
 sidebarTab.addEventListener("click", () => {
   toggleSidebar();
 });
@@ -133,7 +135,15 @@ function safeParseURL(raw) {
 
 /**
  * Build an iframe src + aspect ratio for a given URL.
- * Uses provider-specific embed endpoints where possible.
+ * Uses provider-specific embed endpoints for:
+ *  - YouTube
+ *  - Twitch (channel, vod, clips)
+ *  - Kick
+ *  - Vimeo
+ *  - X / Twitter
+ *
+ * Rumble and Facebook URLs are NOT handled here anymore:
+ *  - For those, users should paste the official embed iframe into the Embed box.
  */
 function buildEmbedFromUrl(urlObj, raw) {
   const fallback = {
@@ -155,13 +165,10 @@ function buildEmbedFromUrl(urlObj, raw) {
     let videoId = "";
 
     if (host === "youtu.be") {
-      // youtu.be/VIDEOID
       videoId = pathParts[0] || "";
     } else {
-      // https://youtube.com/watch?v=ID
       videoId = urlObj.searchParams.get("v") || "";
 
-      // shorts / embed / live / <id>
       if (!videoId) {
         const first = pathParts[0];
         const second = pathParts[1];
@@ -183,15 +190,12 @@ function buildEmbedFromUrl(urlObj, raw) {
   }
 
   // ===== Twitch =====
-  //  Channel: https://player.twitch.tv/?channel=CHANNEL&parent=DOMAIN&origin=URL
-  //  Video:   https://player.twitch.tv/?video=ID&parent=DOMAIN&origin=URL
-  //  Clip:    https://clips.twitch.tv/embed?clip=SLUG&parent=DOMAIN&origin=URL
   const twitchParams =
     `parent=${encodeURIComponent(TWITCH_PARENT_DOMAIN)}` +
     `&origin=${encodeURIComponent(TWITCH_ORIGIN)}`;
 
   if (host === "twitch.tv" || host.endsWith(".twitch.tv")) {
-    // Example clip: https://www.twitch.tv/clip/SomeClipSlug
+    // Clip: https://www.twitch.tv/clip/Slug
     if (pathParts[0] === "clip" && pathParts[1]) {
       const slug = pathParts[1];
       return {
@@ -202,7 +206,7 @@ function buildEmbedFromUrl(urlObj, raw) {
       };
     }
 
-    // Also support ?clip=Slug
+    // Clip via ?clip=Slug
     const clipParam = urlObj.searchParams.get("clip");
     if (clipParam) {
       return {
@@ -213,7 +217,7 @@ function buildEmbedFromUrl(urlObj, raw) {
       };
     }
 
-    // VODs: /videos/VIDEO_ID
+    // VOD: /videos/ID
     if (pathParts[0] === "videos" && pathParts[1]) {
       const videoId = pathParts[1];
       return {
@@ -224,7 +228,7 @@ function buildEmbedFromUrl(urlObj, raw) {
       };
     }
 
-    // Channels: /CHANNEL
+    // Channel: /CHANNEL
     const channel = pathParts[0] || "";
     if (channel) {
       return {
@@ -242,13 +246,10 @@ function buildEmbedFromUrl(urlObj, raw) {
   if (host === "clips.twitch.tv") {
     const slug = pathParts[0] || "";
     if (slug) {
-      const twitchParamsClips =
-        `parent=${encodeURIComponent(TWITCH_PARENT_DOMAIN)}` +
-        `&origin=${encodeURIComponent(TWITCH_ORIGIN)}`;
       return {
         src: `https://clips.twitch.tv/embed?clip=${encodeURIComponent(
           slug
-        )}&${twitchParamsClips}`,
+        )}&${twitchParams}`,
         aspect: 16 / 9,
       };
     }
@@ -267,40 +268,25 @@ function buildEmbedFromUrl(urlObj, raw) {
     return fallback;
   }
 
-  // ===== Rumble =====
-  // Recorded example from you:
-  //   https://rumble.com/v71i3ym-gangs-order-kill-on-sight-dhs-agents-chicago-is-a-war-zone.html?...
-  //
-  // Official embed form:
-  //   https://rumble.com/embed/v71i3ym/
+  // ===== Rumble (removed) =====
   if (host.includes("rumble.com")) {
-    // If user already gave an embed URL, just use it
-    const embedMatch = urlObj.pathname.match(/\/embed\/(v[0-9A-Za-z]+)/);
-    if (embedMatch && embedMatch[1]) {
-      return {
-        src: `https://rumble.com/embed/${embedMatch[1]}/`,
-        aspect: 16 / 9,
-      };
-    }
-
-    // General recorded-video pattern: look for /vID-... or /vID
-    const idMatch = urlObj.pathname.match(/\/(v[0-9A-Za-z]+)[^\/]*/);
-    if (idMatch && idMatch[1]) {
-      const id = idMatch[1]; // e.g. v71i3ym
-      return {
-        src: `https://rumble.com/embed/${id}/`,
-        aspect: 16 / 9,
-      };
-    }
-
-    // Channel / livestream URLs like /c/Timcast/livestreams
-    // cannot be generically mapped to an embed ID; fall back.
-    return fallback;
+    // No automatic handling; require the official Rumble embed iframe instead.
+    alert(
+      "Rumble URLs are not added directly. Please copy the official Rumble embed code and paste it into the Embed box."
+    );
+    return null;
   }
 
-  // ===== X (Twitter) =====
-  // Use official Tweet embed endpoint if we can get a status ID,
-  // otherwise fall back to Twitframe which builds an iframe for any X URL.
+  // ===== Facebook (removed) =====
+  if (host.includes("facebook.com") || host === "fb.watch") {
+    // No automatic handling; require official Facebook embed iframe instead.
+    alert(
+      "Facebook URLs are not added directly. Please copy the official Facebook embed code and paste it into the Embed box."
+    );
+    return null;
+  }
+
+  // ===== X / Twitter =====
   if (
     host === "twitter.com" ||
     host === "x.com" ||
@@ -310,7 +296,8 @@ function buildEmbedFromUrl(urlObj, raw) {
     let tweetId = null;
 
     for (let i = 0; i < pathParts.length; i++) {
-      if (pathParts[i].toLowerCase() === "status" && pathParts[i + 1]) {
+      const seg = pathParts[i].toLowerCase();
+      if ((seg === "status" || seg === "statuses") && pathParts[i + 1]) {
         const candidate = pathParts[i + 1].split("?")[0];
         if (/^\d+$/.test(candidate)) {
           tweetId = candidate;
@@ -320,52 +307,22 @@ function buildEmbedFromUrl(urlObj, raw) {
     }
 
     if (tweetId) {
+      // Official tweet embed (Twitter controls layout; usually text + video).
       return {
         src:
           "https://platform.twitter.com/embed/Tweet.html?id=" +
           encodeURIComponent(tweetId) +
-          "&theme=dark&dnt=false",
+          "&theme=dark&hide_thread=true&dnt=false",
         aspect: 16 / 9,
       };
     }
 
-    // Fallback: Twitframe (handles any X/Twitter URL)
+    // Fallback: Twitframe (full tweet in an iframe)
     return {
       src:
         "https://twitframe.com/show?url=" +
-        encodeURIComponent(full),
-      aspect: 16 / 9,
-    };
-  }
-
-  // ===== Facebook =====
-  // Use official Facebook plugins.
-  if (host === "facebook.com" || host.endsWith(".facebook.com") || host === "fb.watch") {
-    const original = urlObj.toString();
-
-    // Decide if it's likely a video or a post
-    const isVideo =
-      host === "fb.watch" ||
-      pathParts.includes("videos") ||
-      pathParts.includes("watch") ||
-      urlObj.searchParams.has("v");
-
-    if (isVideo) {
-      return {
-        src:
-          "https://www.facebook.com/plugins/video.php?href=" +
-          encodeURIComponent(original) +
-          "&show_text=false&width=560",
-        aspect: 16 / 9,
-      };
-    }
-
-    // Generic post plugin
-    return {
-      src:
-        "https://www.facebook.com/plugins/post.php?href=" +
-        encodeURIComponent(original) +
-        "&show_text=true&width=560",
+        encodeURIComponent(full) +
+        "&theme=dark",
       aspect: 16 / 9,
     };
   }
@@ -399,6 +356,9 @@ function createVideoFromUrl(rawUrl) {
   const urlObj = safeParseURL(trimmed);
   const cfg = buildEmbedFromUrl(urlObj, trimmed);
 
+  // Host was explicitly unsupported (Rumble/Facebook): nothing to create.
+  if (!cfg) return;
+
   createVideoWindow({
     type: "iframe",
     src: cfg.src,
@@ -430,14 +390,12 @@ function createVideoFromEmbed(embedHtml) {
   if (mediaEls.length > 0) {
     const first = mediaEls[0];
 
-    // Infer aspect from attributes
     const wAttr = parseInt(first.getAttribute("width"), 10);
     const hAttr = parseInt(first.getAttribute("height"), 10);
 
     if (!isNaN(wAttr) && !isNaN(hAttr) && hAttr !== 0) {
       aspect = wAttr / hAttr;
     } else {
-      // Or infer from inline styles
       const styleWidth = parseInt(first.style.width, 10);
       const styleHeight = parseInt(first.style.height, 10);
       if (!isNaN(styleWidth) && !isNaN(styleHeight) && styleHeight !== 0) {
@@ -445,7 +403,6 @@ function createVideoFromEmbed(embedHtml) {
       }
     }
 
-    // Ensure all embedded players fill the window
     mediaEls.forEach((el) => {
       el.removeAttribute("width");
       el.removeAttribute("height");
@@ -454,6 +411,9 @@ function createVideoFromEmbed(embedHtml) {
       el.style.border = "none";
       if (el.tagName.toLowerCase() === "video") {
         el.style.objectFit = "contain";
+      }
+      if (el.tagName.toLowerCase() === "iframe") {
+        el.scrolling = "no";
       }
     });
   }
@@ -487,7 +447,6 @@ function computeInitialSize(ratio) {
 }
 
 function createVideoWindow(options) {
-  // Hide welcome on first video
   if (welcome && welcome.style.display !== "none") {
     welcome.style.display = "none";
   }
@@ -507,7 +466,7 @@ function createVideoWindow(options) {
   win.style.top = 40 + existingCount * 24 + "px";
   win.style.zIndex = String(zCounter++);
 
-  // ----- Toolbar -----
+  // Toolbar
   const toolbar = document.createElement("div");
   toolbar.className = "video-toolbar";
 
@@ -532,7 +491,6 @@ function createVideoWindow(options) {
   toolbar.appendChild(sizeIndicator);
   toolbar.appendChild(closeBtn);
 
-  // ----- Content -----
   const content = document.createElement("div");
   content.className = "video-content";
 
@@ -546,6 +504,7 @@ function createVideoWindow(options) {
       "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
     );
     iframe.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+    iframe.scrolling = "no";
     content.appendChild(iframe);
   } else if (options.type === "html") {
     content.innerHTML = options.html;
@@ -557,10 +516,12 @@ function createVideoWindow(options) {
       if (el.tagName.toLowerCase() === "video") {
         el.style.objectFit = "contain";
       }
+      if (el.tagName.toLowerCase() === "iframe") {
+        el.scrolling = "no";
+      }
     });
   }
 
-  // ----- Delete confirmation overlay -----
   const overlay = document.createElement("div");
   overlay.className = "confirm-overlay";
   overlay.innerHTML = `
@@ -574,7 +535,6 @@ function createVideoWindow(options) {
   `;
   content.appendChild(overlay);
 
-  // ----- Resize handles -----
   ["nw", "ne", "sw", "se"].forEach((corner) => {
     const h = document.createElement("div");
     h.className = `resize-handle resize-${corner}`;
@@ -602,12 +562,11 @@ function attachWindowEvents(win) {
   const confirmNo = overlay.querySelector(".confirm-no");
   const sizeIndicator = win.querySelector(".size-indicator");
 
-  // Bring to front when activated
   win.addEventListener("mousedown", () => {
     win.style.zIndex = String(zCounter++);
   });
 
-  // ---- Moving ----
+  // Smooth MOVE: store fixed geometry at start; update only via rAF
   moveHandle.addEventListener("mousedown", (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -621,12 +580,16 @@ function attachWindowEvents(win) {
       offsetX: e.clientX - rect.left,
       offsetY: e.clientY - rect.top,
       workspaceRect,
+      width: rect.width,
+      height: rect.height,
+      left: rect.left - workspaceRect.left,
+      top: rect.top - workspaceRect.top,
     };
 
     win.classList.add("moving");
   });
 
-  // ---- Resizing ----
+  // Smooth RESIZE: same pattern, all geometry stored once at mousedown
   const handles = win.querySelectorAll(".resize-handle");
   handles.forEach((handle) => {
     handle.addEventListener("mousedown", (e) => {
@@ -647,13 +610,16 @@ function attachWindowEvents(win) {
         win,
         corner,
         startMouseX: e.clientX,
-        startMouseY: e.clientY,
         startLeft,
         startTop,
         startWidth,
         startHeight,
         aspect: parseFloat(win.dataset.aspectRatio) || 16 / 9,
         workspaceRect,
+        left: startLeft,
+        top: startTop,
+        width: startWidth,
+        height: startHeight,
       };
 
       win.classList.add("resizing");
@@ -664,7 +630,6 @@ function attachWindowEvents(win) {
     });
   });
 
-  // ---- Close / Confirm ----
   closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     overlay.style.display = "flex";
@@ -680,10 +645,8 @@ function attachWindowEvents(win) {
     win.remove();
     overlay.style.display = "none";
 
-    if (!workspace.querySelector(".video-window")) {
-      if (welcome) {
-        welcome.style.display = "";
-      }
+    if (!workspace.querySelector(".video-window") && welcome) {
+      welcome.style.display = "";
     }
   });
 }
@@ -704,7 +667,6 @@ function clampWindowToWorkspace(win) {
   if (Number.isNaN(left)) left = 0;
   if (Number.isNaN(top)) top = 0;
 
-  // Scale down if window is larger than workspace
   if (width > workspaceRect.width || height > workspaceRect.height) {
     const scale = Math.min(
       workspaceRect.width / width,
@@ -746,16 +708,62 @@ function getMaxWidthForCorner(action) {
   const Wh = workspaceRect.height;
 
   switch (corner) {
-    case "se": // anchor top-left
+    case "se":
       return Math.min(Ww - startLeft, (Wh - startTop) * aspect);
-    case "sw": // anchor top-right
+    case "sw":
       return Math.min(right, (Wh - startTop) * aspect);
-    case "ne": // anchor bottom-left
+    case "ne":
       return Math.min(Ww - startLeft, bottom * aspect);
-    case "nw": // anchor bottom-right
+    case "nw":
       return Math.min(right, bottom * aspect);
     default:
       return Ww;
+  }
+}
+
+// ==========================
+// rAF Update Loop (smooth drag/resize)
+// ==========================
+
+function requestRender() {
+  if (rafId == null) {
+    rafId = requestAnimationFrame(applyActiveAction);
+  }
+}
+
+function applyActiveAction() {
+  rafId = null;
+  if (!activeAction) return;
+
+  const { win, type } = activeAction;
+  if (!win) return;
+
+  if (type === "move") {
+    if (typeof activeAction.left === "number") {
+      win.style.left = activeAction.left + "px";
+    }
+    if (typeof activeAction.top === "number") {
+      win.style.top = activeAction.top + "px";
+    }
+  } else if (type === "resize") {
+    const { left, top, width, height } = activeAction;
+    if (
+      typeof left === "number" &&
+      typeof top === "number" &&
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      win.style.left = left + "px";
+      win.style.top = top + "px";
+      win.style.width = width + "px";
+      win.style.height = height + "px";
+
+      const sizeIndicator = win.querySelector(".size-indicator");
+      if (sizeIndicator) {
+        sizeIndicator.textContent =
+          Math.round(width) + " x " + Math.round(height);
+      }
+    }
   }
 }
 
@@ -769,11 +777,7 @@ document.addEventListener("mousemove", (e) => {
   e.preventDefault();
 
   if (activeAction.type === "move") {
-    const { win, offsetX, offsetY, workspaceRect } = activeAction;
-
-    const style = window.getComputedStyle(win);
-    const width = parseFloat(style.width);
-    const height = parseFloat(style.height);
+    const { offsetX, offsetY, workspaceRect, width, height } = activeAction;
 
     let newLeft = e.clientX - offsetX - workspaceRect.left;
     let newTop = e.clientY - offsetY - workspaceRect.top;
@@ -786,14 +790,14 @@ document.addEventListener("mousemove", (e) => {
     if (newLeft > maxLeft) newLeft = maxLeft;
     if (newTop > maxTop) newTop = maxTop;
 
-    win.style.left = newLeft + "px";
-    win.style.top = newTop + "px";
+    activeAction.left = newLeft;
+    activeAction.top = newTop;
+    requestRender();
   }
 
   if (activeAction.type === "resize") {
     const s = activeAction;
     const {
-      win,
       corner,
       startMouseX,
       startLeft,
@@ -806,16 +810,14 @@ document.addEventListener("mousemove", (e) => {
 
     const dx = e.clientX - startMouseX;
 
-    // Proposed width based on horizontal drag
     let proposedWidth =
       corner === "ne" || corner === "se"
-        ? startWidth + dx // east side
-        : startWidth - dx; // west side
+        ? startWidth + dx
+        : startWidth - dx;
 
     const minWidth = 220;
     const maxWidth = getMaxWidthForCorner(s) || startWidth;
 
-    // Clamp to [minWidth, maxWidth]
     let newWidth = Math.max(minWidth, Math.min(proposedWidth, maxWidth));
     let newHeight = newWidth / aspect;
 
@@ -826,34 +828,30 @@ document.addEventListener("mousemove", (e) => {
     let newTop = startTop;
 
     switch (corner) {
-      case "se": // anchor top-left
+      case "se":
         newLeft = startLeft;
         newTop = startTop;
         break;
-      case "sw": // anchor top-right
+      case "sw":
         newLeft = right - newWidth;
         newTop = startTop;
         break;
-      case "ne": // anchor bottom-left
+      case "ne":
         newLeft = startLeft;
         newTop = bottom - newHeight;
         break;
-      case "nw": // anchor bottom-right
+      case "nw":
         newLeft = right - newWidth;
         newTop = bottom - newHeight;
         break;
     }
 
-    win.style.width = newWidth + "px";
-    win.style.height = newHeight + "px";
-    win.style.left = newLeft + "px";
-    win.style.top = newTop + "px";
+    activeAction.left = newLeft;
+    activeAction.top = newTop;
+    activeAction.width = newWidth;
+    activeAction.height = newHeight;
 
-    const sizeIndicator = win.querySelector(".size-indicator");
-    if (sizeIndicator) {
-      sizeIndicator.textContent =
-        Math.round(newWidth) + " x " + Math.round(newHeight);
-    }
+    requestRender();
   }
 });
 
@@ -861,19 +859,23 @@ document.addEventListener("mouseup", () => {
   if (!activeAction) return;
   const { win, type } = activeAction;
 
-  if (type === "move") {
-    win.classList.remove("moving");
-  }
-  if (type === "resize") {
-    win.classList.remove("resizing");
-  }
+  applyActiveAction();
+
+  if (type === "move") win.classList.remove("moving");
+  if (type === "resize") win.classList.remove("resizing");
 
   clampWindowToWorkspace(win);
   activeAction = null;
 });
 
-// Keep all windows inside viewport if browser is resized
 window.addEventListener("resize", () => {
   const wins = workspace.querySelectorAll(".video-window");
   wins.forEach((win) => clampWindowToWorkspace(win));
+});
+
+
+const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+
+sidebarBackdrop.addEventListener("click", () => {
+  document.body.classList.remove("sidebar-open");
 });

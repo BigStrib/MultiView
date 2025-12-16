@@ -2,100 +2,225 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MultiView - Master Multiplayer</title>
+  <title>MultiView – Multi-Stream Layout</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- External CSS -->
+  <meta name="description" content="MultiView – arrange multiple video streams on a single canvas." />
+  <meta name="theme-color" content="#000000" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Slide-out sidebar (menu is completely off-screen when closed) -->
-  <aside id="sidebar" aria-label="Video sources panel">
+  <!-- Sidebar panel -->
+  <aside id="sidebar" aria-label="Video panel">
     <div id="sidebar-content">
-      <h2>Video Sources</h2>
+      <!-- Logo -->
+      <header class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg class="logo-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="2" y="2" width="9" height="9" rx="1"></rect>
+            <rect x="13" y="2" width="9" height="9" rx="1"></rect>
+            <rect x="2" y="13" width="9" height="9" rx="1"></rect>
+            <rect x="13" y="13" width="9" height="9" rx="1"></rect>
+          </svg>
+          <span class="logo-text">MultiView</span>
+        </div>
+      </header>
 
-      <!-- URL section -->
+      <!-- URL input -->
       <section class="sidebar-section">
-        <div class="sidebar-section-label">Video URL</div>
+        <label class="input-label" for="urlInput">
+          <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          <span>Paste URL</span>
+        </label>
         <input
           id="urlInput"
           type="text"
           autocomplete="off"
           spellcheck="false"
-          placeholder="Paste a YouTube, Twitch, Kick, Rumble, Vimeo URL"
+          placeholder="https://youtube.com/watch?v=..."
         />
-        <div class="sidebar-buttons">
-          <button class="primary" type="button" id="addUrlBtn">
-            <span class="btn-icon" aria-hidden="true">➕</span>
-            <span class="btn-label">Add From URL</span>
-          </button>
-        </div>
+        <button class="btn-add" type="button" id="addUrlBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add</span>
+        </button>
       </section>
 
-      <div class="divider">or</div>
+      <div class="divider"><span>or paste embed code</span></div>
 
-      <!-- Embed code section -->
+      <!-- Embed input -->
       <section class="sidebar-section">
-        <div class="sidebar-section-label">Embed Code</div>
+        <label class="input-label" for="embedInput">
+          <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>Embed Code</span>
+        </label>
         <textarea
           id="embedInput"
           autocomplete="off"
           spellcheck="false"
-          placeholder="Paste full iframe/embed code (YouTube, Vimeo, Rumble, etc.)"
+          placeholder="<iframe src=...></iframe>"
         ></textarea>
-        <div class="sidebar-buttons">
-          <button type="button" id="addEmbedBtn">
-            <span class="btn-icon" aria-hidden="true">📎</span>
-            <span class="btn-label">Add From Embed</span>
-          </button>
-        </div>
+        <button class="btn-add" type="button" id="addEmbedBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add</span>
+        </button>
       </section>
 
-      <p class="sidebar-note">
-        • The menu is smart-paste: when you paste a URL or embed code,
-        the video is added and the menu closes automatically.<br />
-        • Hover any video to move it (top-left), close it (top-right),
-        or resize it from the corners. Aspect ratio is preserved.
-      </p>
+      <!-- Supported platforms -->
+      <section class="platforms-section">
+        <div class="platforms-title">Supported Platforms</div>
+        <ul class="platforms-list">
+          <!-- YouTube -->
+          <li class="platform-item">
+            <svg class="platform-icon icon-youtube" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            <span class="platform-name">YouTube</span>
+          </li>
+          <!-- Twitch -->
+          <li class="platform-item">
+            <svg class="platform-icon icon-twitch" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+            </svg>
+            <span class="platform-name">Twitch</span>
+          </li>
+          <!-- Kick -->
+          <li class="platform-item">
+            <svg class="platform-icon icon-kick" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3v18h4v-6.5l2 2.5 4 4h5l-6-7 6-8h-5l-4 5.5-2-2.5V3H6z"/>
+            </svg>
+            <span class="platform-name">Kick</span>
+          </li>
+          <!-- Vimeo -->
+          <li class="platform-item">
+            <svg class="platform-icon icon-vimeo" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.977 6.416c-.105 2.338-1.739 5.543-4.894 9.609-3.268 4.247-6.026 6.37-8.29 6.37-1.409 0-2.578-1.294-3.553-3.881L5.322 11.4C4.603 8.816 3.834 7.522 3.01 7.522c-.179 0-.806.378-1.881 1.132L0 7.197a315.065 315.065 0 0 0 3.501-3.128C5.08 2.701 6.266 1.984 7.055 1.91c1.867-.18 3.016 1.1 3.447 3.838.465 2.953.789 4.789.971 5.507.539 2.45 1.131 3.674 1.776 3.674.502 0 1.256-.796 2.265-2.385 1.004-1.589 1.54-2.797 1.612-3.628.144-1.371-.395-2.061-1.614-2.061-.574 0-1.167.121-1.777.391 1.186-3.868 3.434-5.757 6.762-5.637 2.473.06 3.628 1.664 3.493 4.797l-.013.01z"/>
+            </svg>
+            <span class="platform-name">Vimeo</span>
+          </li>
+          <!-- X (Twitter) -->
+          <li class="platform-item">
+            <svg class="platform-icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298z"/>
+            </svg>
+            <span class="platform-name">X (Twitter)</span>
+          </li>
+        </ul>
+      </section>
     </div>
   </aside>
 
-  <!-- Invisible edge tab that reveals on hover and toggles sidebar -->
-  <button
-    id="sidebar-tab"
-    type="button"
-    title="Open video menu"
-    aria-label="Open video menu"
-  >
-    <span class="tab-icon" aria-hidden="true">☰</span>
-    <span class="tab-text">Add</span>
+  <!-- Backdrop -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+  <!-- Edge tab -->
+  <button id="sidebar-tab" type="button" aria-label="Open menu">
+    <svg class="tab-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+      <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+      <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+      <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+    </svg>
   </button>
 
   <!-- Main workspace -->
-  <main id="workspace">
-    <!-- Homepage / welcome overlay (hidden once first video is added) -->
+  <main id="workspace" role="main" aria-label="MultiView workspace">
+    <!-- Welcome overlay -->
     <section id="welcome" aria-label="Welcome">
       <div id="welcome-inner">
-        <h1>MultiView</h1>
-        <p>
-          Combine multiple live streams and videos on one dark, flexible canvas.
-          Add YouTube, Twitch, Kick, Rumble, Vimeo, or any custom iframe embed.
+        <div class="welcome-logo">
+          <svg class="welcome-logo-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="2" y="2" width="9" height="9" rx="1"></rect>
+            <rect x="13" y="2" width="9" height="9" rx="1"></rect>
+            <rect x="2" y="13" width="9" height="9" rx="1"></rect>
+            <rect x="13" y="13" width="9" height="9" rx="1"></rect>
+          </svg>
+          <h1 class="welcome-title">MultiView</h1>
+        </div>
+
+        <p class="welcome-tagline">Multi-stream video layout for power users</p>
+
+        <!-- Platform icons row -->
+        <div class="welcome-platforms" aria-label="Supported platforms">
+          <!-- YouTube -->
+          <div class="welcome-platform">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+          </div>
+          <!-- Twitch -->
+          <div class="welcome-platform">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+            </svg>
+          </div>
+          <!-- Kick -->
+          <div class="welcome-platform">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3v18h4v-6.5l2 2.5 4 4h5l-6-7 6-8h-5l-4 5.5-2-2.5V3H6z"/>
+            </svg>
+          </div>
+          <!-- Vimeo -->
+          <div class="welcome-platform">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.977 6.416c-.105 2.338-1.739 5.543-4.894 9.609-3.268 4.247-6.026 6.37-8.29 6.37-1.409 0-2.578-1.294-3.553-3.881L5.322 11.4C4.603 8.816 3.834 7.522 3.01 7.522c-.179 0-.806.378-1.881 1.132L0 7.197a315.065 315.065 0 0 0 3.501-3.128C5.08 2.701 6.266 1.984 7.055 1.91c1.867-.18 3.016 1.1 3.447 3.838.465 2.953.789 4.789.971 5.507.539 2.45 1.131 3.674 1.776 3.674.502 0 1.256-.796 2.265-2.385 1.004-1.589 1.54-2.797 1.612-3.628.144-1.371-.395-2.061-1.614-2.061-.574 0-1.167.121-1.777.391 1.186-3.868 3.434-5.757 6.762-5.637 2.473.06 3.628 1.664 3.493 4.797l-.013.01z"/>
+            </svg>
+          </div>
+          <!-- X (Twitter) -->
+          <div class="welcome-platform">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="welcome-instructions">
+          <div class="instruction-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            <span>Click the grid icon on the left edge</span>
+          </div>
+          <div class="instruction-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>Paste a video URL or embed code</span>
+          </div>
+          <div class="instruction-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="5 9 2 12 5 15"></polyline>
+              <polyline points="9 5 12 2 15 5"></polyline>
+              <polyline points="15 19 12 22 9 19"></polyline>
+              <polyline points="19 9 22 12 19 15"></polyline>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="12" y1="2" x2="12" y2="22"></line>
+            </svg>
+            <span>Drag to move, corners to resize</span>
+          </div>
+        </div>
+
+        <p class="welcome-shortcut">
+          <kbd>Shift</kbd> toggles the menu
         </p>
-        <ul>
-          <li>Move your mouse to the left edge to discover the hidden tab.</li>
-          <li>Click the tab to open the menu, then paste a URL or embed code.</li>
-          <li>Hover a video to reveal controls: move (top-left), close (top-right).</li>
-          <li>
-            Resize using the corner squares; current size appears at the top
-            while resizing.
-          </li>
-          <li>No rounded corners and no shadows — just clean, sharp frames.</li>
-        </ul>
       </div>
     </section>
   </main>
 
-  <!-- External JS -->
   <script src="script.js" defer></script>
 </body>
 </html>
