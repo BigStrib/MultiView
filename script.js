@@ -18,8 +18,6 @@ const addUrlBtn = document.getElementById("addUrlBtn");
 const addEmbedBtn = document.getElementById("addEmbedBtn");
 
 // Twitch embed configuration
-// parent: domain only (Twitch requirement)
-// origin: full URL of where the embed lives (your request)
 const TWITCH_PARENT_DOMAIN = "bigstrib.github.io";
 const TWITCH_ORIGIN = "https://bigstrib.github.io/MultiView/";
 
@@ -135,12 +133,7 @@ function safeParseURL(raw) {
 
 /**
  * Build an iframe src + aspect ratio for a given URL.
- * Uses official/embed endpoints for:
- *  - YouTube
- *  - Twitch (channel, video, clip)
- *  - Kick
- *  - Rumble (recorded)
- *  - Vimeo
+ * Uses provider-specific embed endpoints where possible.
  */
 function buildEmbedFromUrl(urlObj, raw) {
   const fallback = {
@@ -190,16 +183,15 @@ function buildEmbedFromUrl(urlObj, raw) {
   }
 
   // ===== Twitch =====
-  // Official docs:
-  //   Channel: https://player.twitch.tv/?channel=CHANNEL&parent=DOMAIN&origin=URL
-  //   Video:   https://player.twitch.tv/?video=ID&parent=DOMAIN&origin=URL
-  //   Clip:    https://clips.twitch.tv/embed?clip=SLUG&parent=DOMAIN&origin=URL
+  //  Channel: https://player.twitch.tv/?channel=CHANNEL&parent=DOMAIN&origin=URL
+  //  Video:   https://player.twitch.tv/?video=ID&parent=DOMAIN&origin=URL
+  //  Clip:    https://clips.twitch.tv/embed?clip=SLUG&parent=DOMAIN&origin=URL
   const twitchParams =
     `parent=${encodeURIComponent(TWITCH_PARENT_DOMAIN)}` +
     `&origin=${encodeURIComponent(TWITCH_ORIGIN)}`;
 
   if (host === "twitch.tv" || host.endsWith(".twitch.tv")) {
-    // Clips like: https://www.twitch.tv/clip/ClipSlug
+    // Example clip: https://www.twitch.tv/clip/SomeClipSlug
     if (pathParts[0] === "clip" && pathParts[1]) {
       const slug = pathParts[1];
       return {
@@ -210,12 +202,12 @@ function buildEmbedFromUrl(urlObj, raw) {
       };
     }
 
-    // Clips with ?clip=SLUG
-    if (urlObj.searchParams.get("clip")) {
-      const slug = urlObj.searchParams.get("clip");
+    // Also support ?clip=Slug
+    const clipParam = urlObj.searchParams.get("clip");
+    if (clipParam) {
       return {
         src: `https://clips.twitch.tv/embed?clip=${encodeURIComponent(
-          slug
+          clipParam
         )}&${twitchParams}`,
         aspect: 16 / 9,
       };
@@ -246,14 +238,17 @@ function buildEmbedFromUrl(urlObj, raw) {
     return fallback;
   }
 
-  // Direct clip host
+  // Twitch clips direct host
   if (host === "clips.twitch.tv") {
     const slug = pathParts[0] || "";
     if (slug) {
+      const twitchParamsClips =
+        `parent=${encodeURIComponent(TWITCH_PARENT_DOMAIN)}` +
+        `&origin=${encodeURIComponent(TWITCH_ORIGIN)}`;
       return {
         src: `https://clips.twitch.tv/embed?clip=${encodeURIComponent(
           slug
-        )}&${twitchParams}`,
+        )}&${twitchParamsClips}`,
         aspect: 16 / 9,
       };
     }
@@ -273,29 +268,106 @@ function buildEmbedFromUrl(urlObj, raw) {
   }
 
   // ===== Rumble =====
-  // Recorded example:
+  // Recorded example from you:
   //   https://rumble.com/v71i3ym-gangs-order-kill-on-sight-dhs-agents-chicago-is-a-war-zone.html?...
   //
   // Official embed form:
-  //   https://rumble.com/embed/v71i3ym/?pub=4
+  //   https://rumble.com/embed/v71i3ym/
   if (host.includes("rumble.com")) {
-    if (pathParts.length) {
-      const segmentWithV = pathParts.find((p) => /^v[0-9A-Za-z]+/.test(p));
-      if (segmentWithV) {
-        const match = segmentWithV.match(/^(v[0-9A-Za-z]+)/);
-        if (match && match[1]) {
-          const id = match[1];
-          return {
-            src: `https://rumble.com/embed/${id}/?pub=4`,
-            aspect: 16 / 9,
-          };
+    // If user already gave an embed URL, just use it
+    const embedMatch = urlObj.pathname.match(/\/embed\/(v[0-9A-Za-z]+)/);
+    if (embedMatch && embedMatch[1]) {
+      return {
+        src: `https://rumble.com/embed/${embedMatch[1]}/`,
+        aspect: 16 / 9,
+      };
+    }
+
+    // General recorded-video pattern: look for /vID-... or /vID
+    const idMatch = urlObj.pathname.match(/\/(v[0-9A-Za-z]+)[^\/]*/);
+    if (idMatch && idMatch[1]) {
+      const id = idMatch[1]; // e.g. v71i3ym
+      return {
+        src: `https://rumble.com/embed/${id}/`,
+        aspect: 16 / 9,
+      };
+    }
+
+    // Channel / livestream URLs like /c/Timcast/livestreams
+    // cannot be generically mapped to an embed ID; fall back.
+    return fallback;
+  }
+
+  // ===== X (Twitter) =====
+  // Use official Tweet embed endpoint if we can get a status ID,
+  // otherwise fall back to Twitframe which builds an iframe for any X URL.
+  if (
+    host === "twitter.com" ||
+    host === "x.com" ||
+    host === "mobile.twitter.com"
+  ) {
+    const full = urlObj.toString();
+    let tweetId = null;
+
+    for (let i = 0; i < pathParts.length; i++) {
+      if (pathParts[i].toLowerCase() === "status" && pathParts[i + 1]) {
+        const candidate = pathParts[i + 1].split("?")[0];
+        if (/^\d+$/.test(candidate)) {
+          tweetId = candidate;
+          break;
         }
       }
     }
-    // Channel / livestream URLs like /c/Timcast/livestreams do not
-    // expose an embed ID in the URL, so we can't reliably build the
-    // official embed URL here. Fallback: generic iframe to the page.
-    return fallback;
+
+    if (tweetId) {
+      return {
+        src:
+          "https://platform.twitter.com/embed/Tweet.html?id=" +
+          encodeURIComponent(tweetId) +
+          "&theme=dark&dnt=false",
+        aspect: 16 / 9,
+      };
+    }
+
+    // Fallback: Twitframe (handles any X/Twitter URL)
+    return {
+      src:
+        "https://twitframe.com/show?url=" +
+        encodeURIComponent(full),
+      aspect: 16 / 9,
+    };
+  }
+
+  // ===== Facebook =====
+  // Use official Facebook plugins.
+  if (host === "facebook.com" || host.endsWith(".facebook.com") || host === "fb.watch") {
+    const original = urlObj.toString();
+
+    // Decide if it's likely a video or a post
+    const isVideo =
+      host === "fb.watch" ||
+      pathParts.includes("videos") ||
+      pathParts.includes("watch") ||
+      urlObj.searchParams.has("v");
+
+    if (isVideo) {
+      return {
+        src:
+          "https://www.facebook.com/plugins/video.php?href=" +
+          encodeURIComponent(original) +
+          "&show_text=false&width=560",
+        aspect: 16 / 9,
+      };
+    }
+
+    // Generic post plugin
+    return {
+      src:
+        "https://www.facebook.com/plugins/post.php?href=" +
+        encodeURIComponent(original) +
+        "&show_text=true&width=560",
+      aspect: 16 / 9,
+    };
   }
 
   // ===== Vimeo main site =====
@@ -336,15 +408,14 @@ function createVideoFromUrl(rawUrl) {
 
 /**
  * Accept arbitrary embed code from platforms.
- * We preserve iframes exactly as given, but:
- *  - Compute aspect ratio from width/height (or styles)
- *  - Force them to fully fill the window container
- *  - Window resizing preserves that aspect ratio
+ * - Detect aspect ratio from width/height (or styles)
+ * - Force all iframes/videos to fill the window area
+ * - Keep window resizing locked to that aspect ratio
  */
 function createVideoFromEmbed(embedHtml) {
   const html = embedHtml.trim();
 
-  // If user pasted a plain URL, treat as URL instead
+  // If user pasted a plain URL, treat as URL
   if (!/[<]/.test(html) && /^https?:\/\//i.test(html)) {
     createVideoFromUrl(html);
     return;
@@ -366,7 +437,7 @@ function createVideoFromEmbed(embedHtml) {
     if (!isNaN(wAttr) && !isNaN(hAttr) && hAttr !== 0) {
       aspect = wAttr / hAttr;
     } else {
-      // Or from style
+      // Or infer from inline styles
       const styleWidth = parseInt(first.style.width, 10);
       const styleHeight = parseInt(first.style.height, 10);
       if (!isNaN(styleWidth) && !isNaN(styleHeight) && styleHeight !== 0) {
@@ -374,7 +445,7 @@ function createVideoFromEmbed(embedHtml) {
       }
     }
 
-    // Ensure all embedded players fill the video window
+    // Ensure all embedded players fill the window
     mediaEls.forEach((el) => {
       el.removeAttribute("width");
       el.removeAttribute("height");
