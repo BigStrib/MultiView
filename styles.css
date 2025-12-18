@@ -18,6 +18,10 @@
   --text-dim: #707078;
   --danger: #e53935;
   --success: #4caf50;
+  --scrollbar-width: 6px;
+  --scrollbar-track: rgba(20, 20, 20, 0.8);
+  --scrollbar-thumb: var(--accent);
+  --scrollbar-thumb-hover: var(--accent-hover);
 }
 
 *,
@@ -44,6 +48,39 @@ body {
   user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================
+   Custom Scrollbar - Global
+   ========================= */
+
+/* Webkit browsers (Chrome, Safari, Edge, Brave) */
+::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* Disable all tooltips globally */
@@ -592,7 +629,6 @@ body.sidebar-open .tab-svg rect {
 .video-window {
   position: absolute;
   background: var(--bg-video);
-  border: 1px solid var(--border);
   overflow: hidden;
   min-width: 240px;
   min-height: 135px;
@@ -675,11 +711,90 @@ body.sidebar-open .tab-svg rect {
   opacity: 1;
 }
 
+/* =========================
+   Video Content & Scrollbar Visibility
+   ========================= */
+
 .video-content {
   position: absolute;
   inset: 0;
+  overflow: hidden;
 }
 
+/* Base state - scrollbar hidden for Webkit */
+.video-content::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+  background: transparent;
+}
+
+.video-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.video-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 0;
+  transition: background 0.2s ease;
+}
+
+.video-content::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Base state - scrollbar hidden for Firefox */
+.video-content {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+/* Hover state - show scrollbar and enable overflow */
+.video-window:hover .video-content {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.video-window:hover .video-content::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+  background: var(--scrollbar-track);
+}
+
+.video-window:hover .video-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.video-window:hover .video-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+.video-window:hover .video-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.video-window:hover .video-content::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+/* While moving or resizing - keep scrollbar hidden */
+.video-window.moving .video-content,
+.video-window.resizing .video-content {
+  overflow: hidden;
+  scrollbar-width: none;
+}
+
+.video-window.moving .video-content::-webkit-scrollbar-thumb,
+.video-window.resizing .video-content::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.video-window.moving .video-content::-webkit-scrollbar-track,
+.video-window.resizing .video-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Video content iframe/embed/video styling */
 .video-content iframe,
 .video-content embed,
 .video-content video {
@@ -810,4 +925,122 @@ body.sidebar-open .tab-svg rect {
 
 .confirm-no:hover {
   border-color: var(--text-dim);
+}
+
+
+
+
+/* Toolbar layout */
+.video-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  height: 28px;
+  background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+  border-bottom: 1px solid #333;
+  user-select: none;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbar-left {
+  flex: 0 0 auto;
+}
+
+.toolbar-center {
+  flex: 1 1 auto;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 8px;
+}
+
+.toolbar-right {
+  flex: 0 0 auto;
+}
+
+/* Unified toolbar button style */
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.toolbar-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Move handle specific */
+.move-handle {
+  cursor: grab;
+  font-size: 16px;
+  letter-spacing: -1px;
+}
+
+.move-handle:active {
+  cursor: grabbing;
+}
+
+/* Copy button */
+.copy-btn {
+  font-size: 13px;
+}
+
+/* Refresh button */
+.refresh-btn {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* Close button */
+.close-btn {
+  font-size: 12px;
+}
+
+.close-btn:hover {
+  background: rgba(255, 80, 80, 0.3);
+  color: #ff6b6b;
+}
+
+/* Window title */
+.window-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Size indicator */
+.size-indicator {
+  font-size: 12px;
+  color: #555;
+  margin-right: 4px;
+  font-family: monospace;
+  min-width: 70px;
+  text-align: right;
 }
