@@ -66,22 +66,122 @@ function extractSiteName(url) {
   return capitalize(mainPart);
 }
 
+// ==========================
+// Enhanced Provider Detection
+// ==========================
+
 function getDisplayTitle(provider, url) {
   const providerNames = {
     "youtube": "YouTube",
     "twitch-live": "Twitch",
     "twitch-vod": "Twitch",
     "twitch-clip": "Twitch",
+    "twitch": "Twitch",
     "kick": "Kick",
     "vimeo": "Vimeo",
     "twitter": "X",
     "facebook": "Facebook",
     "rumble": "Rumble",
+    "dailymotion": "Dailymotion",
+    "spotify": "Spotify",
+    "soundcloud": "SoundCloud",
+    "streamable": "Streamable",
+    "tiktok": "TikTok",
+    "instagram": "Instagram",
+    "reddit": "Reddit",
+    "pinterest": "Pinterest",
+    "giphy": "Giphy",
+    "imgur": "Imgur",
+    "coub": "Coub",
+    "bandcamp": "Bandcamp",
+    "mixcloud": "Mixcloud",
+    "codepen": "CodePen",
+    "jsfiddle": "JSFiddle",
+    "loom": "Loom",
+    "wistia": "Wistia",
+    "vidyard": "Vidyard",
+    "bitchute": "BitChute",
+    "odysee": "Odysee",
+    "peertube": "PeerTube",
+    "bilibili": "Bilibili",
+    "nicovideo": "Niconico",
+    "googledrive": "Google Drive",
+    "googlemaps": "Google Maps",
+    "gfycat": "Gfycat",
+    "tenor": "Tenor",
+    "flickr": "Flickr",
+    "ted": "TED",
+    "vevo": "Vevo",
+    "twitch-chat": "Twitch Chat",
+    "discord": "Discord",
+    "github-gist": "GitHub Gist",
+    "replit": "Replit",
+    "glitch": "Glitch",
+    "figma": "Figma",
+    "canva": "Canva",
+    "miro": "Miro",
+    "notion": "Notion",
+    "airtable": "Airtable",
+    "typeform": "Typeform",
+    "google-forms": "Google Forms",
+    "google-docs": "Google Docs",
+    "google-sheets": "Google Sheets",
+    "google-slides": "Google Slides",
+    "dropbox": "Dropbox",
+    "box": "Box",
+    "onedrive": "OneDrive",
+    "slideshare": "SlideShare",
+    "prezi": "Prezi",
+    "padlet": "Padlet",
+    "trello": "Trello",
+    "calendly": "Calendly",
+    "eventbrite": "Eventbrite",
+    "meetup": "Meetup",
+    "medium": "Medium",
+    "substack": "Substack",
+    "threads": "Threads",
+    "bluesky": "Bluesky",
+    "mastodon": "Mastodon",
+    "tumblr": "Tumblr",
+    "linkedin": "LinkedIn",
+    "tidal": "TIDAL",
+    "deezer": "Deezer",
+    "audiomack": "Audiomack",
+    "clyp": "Clyp",
+    "vocaroo": "Vocaroo",
+    "anchor": "Anchor",
+    "simplecast": "Simplecast",
+    "libsyn": "Libsyn",
+    "buzzsprout": "Buzzsprout",
+    "transistor": "Transistor",
+    "megaphone": "Megaphone",
+    "spreaker": "Spreaker",
+    "stitcher": "Stitcher",
+    "iheart": "iHeartRadio",
     "generic": null
   };
 
   if (provider && providerNames[provider]) {
     return providerNames[provider];
+  }
+
+  // If url looks like HTML (embed code), try to extract from iframe src
+  if (url && url.includes("<")) {
+    const temp = document.createElement("div");
+    temp.innerHTML = url;
+    const iframe = temp.querySelector("iframe");
+    if (iframe) {
+      const src = iframe.getAttribute("src") || "";
+      if (src) {
+        return extractSiteName(src);
+      }
+    }
+    // Try to find any recognizable URL in the embed
+    const match = url.match(/https?:\/\/([^"'\s<>]+)/i);
+    if (match) {
+      return extractSiteName("https://" + match[1]);
+    }
+    return "Embed";
   }
 
   return extractSiteName(url);
@@ -320,6 +420,397 @@ function scheduleFacebookUpdate(win, iframe, href) {
   }, 200);
 
   resizeTimers.set(win, timer);
+}
+
+// ==========================
+// Embed Provider Detection from src
+// ==========================
+
+function detectProviderFromSrc(src) {
+  if (!src) return { provider: "generic", aspect: 16 / 9 };
+  
+  const srcLower = src.toLowerCase();
+  
+  // Video Platforms
+  if (srcLower.includes("youtube.com/embed") || 
+      srcLower.includes("youtube-nocookie.com/embed") ||
+      srcLower.includes("youtube.com/v/")) {
+    return { provider: "youtube", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("player.twitch.tv") || 
+      srcLower.includes("clips.twitch.tv/embed")) {
+    return { provider: "twitch", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("player.vimeo.com")) {
+    return { provider: "vimeo", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("dailymotion.com/embed") ||
+      srcLower.includes("geo.dailymotion.com/player")) {
+    return { provider: "dailymotion", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("rumble.com/embed")) {
+    return { provider: "rumble", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("streamable.com/e/") ||
+      srcLower.includes("streamable.com/o/") ||
+      srcLower.includes("streamable.com/s/")) {
+    return { provider: "streamable", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("bitchute.com/embed")) {
+    return { provider: "bitchute", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("odysee.com/$/embed")) {
+    return { provider: "odysee", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("/videos/embed/") || srcLower.includes("peertube")) {
+    return { provider: "peertube", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("player.bilibili.com")) {
+    return { provider: "bilibili", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("embed.nicovideo.jp") || srcLower.includes("nicovideo.jp/watch")) {
+    return { provider: "nicovideo", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("player.kick.com")) {
+    return { provider: "kick", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("loom.com/embed") || srcLower.includes("loom.com/share")) {
+    return { provider: "loom", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("wistia.com") || srcLower.includes("wistia.net") || srcLower.includes("wi.st")) {
+    return { provider: "wistia", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("vidyard.com") || srcLower.includes("play.vidyard.com")) {
+    return { provider: "vidyard", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("vevo.com")) {
+    return { provider: "vevo", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("ted.com/talks") || srcLower.includes("embed.ted.com")) {
+    return { provider: "ted", aspect: 16 / 9 };
+  }
+  
+  // Music/Audio Platforms
+  if (srcLower.includes("open.spotify.com/embed")) {
+    if (srcLower.includes("/track/")) {
+      return { provider: "spotify", aspect: 352 / 152 };
+    }
+    if (srcLower.includes("/episode/")) {
+      return { provider: "spotify", aspect: 352 / 232 };
+    }
+    if (srcLower.includes("/playlist/") || srcLower.includes("/album/")) {
+      return { provider: "spotify", aspect: 352 / 380 };
+    }
+    if (srcLower.includes("/show/")) {
+      return { provider: "spotify", aspect: 352 / 232 };
+    }
+    return { provider: "spotify", aspect: 352 / 352 };
+  }
+  
+  if (srcLower.includes("soundcloud.com/player") ||
+      srcLower.includes("w.soundcloud.com") ||
+      srcLower.includes("api.soundcloud.com")) {
+    const isVisual = srcLower.includes("visual=true");
+    return { provider: "soundcloud", aspect: isVisual ? 16 / 9 : 16 / 4 };
+  }
+  
+  if (srcLower.includes("bandcamp.com/EmbeddedPlayer")) {
+    if (srcLower.includes("/album=")) {
+      return { provider: "bandcamp", aspect: 350 / 470 };
+    }
+    if (srcLower.includes("/track=")) {
+      return { provider: "bandcamp", aspect: 350 / 442 };
+    }
+    return { provider: "bandcamp", aspect: 1 };
+  }
+  
+  if (srcLower.includes("mixcloud.com/widget")) {
+    return { provider: "mixcloud", aspect: 16 / 4 };
+  }
+  
+  if (srcLower.includes("embed.tidal.com")) {
+    return { provider: "tidal", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("widget.deezer.com")) {
+    return { provider: "deezer", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("audiomack.com/embed")) {
+    return { provider: "audiomack", aspect: 16 / 5 };
+  }
+  
+  if (srcLower.includes("clyp.it")) {
+    return { provider: "clyp", aspect: 16 / 4 };
+  }
+  
+  if (srcLower.includes("vocaroo.com/embed")) {
+    return { provider: "vocaroo", aspect: 16 / 3 };
+  }
+  
+  if (srcLower.includes("anchor.fm") && srcLower.includes("embed")) {
+    return { provider: "anchor", aspect: 16 / 5 };
+  }
+  
+  // Podcast platforms
+  if (srcLower.includes("player.simplecast.com")) {
+    return { provider: "simplecast", aspect: 16 / 5 };
+  }
+  
+  if (srcLower.includes("html5-player.libsyn.com")) {
+    return { provider: "libsyn", aspect: 16 / 4 };
+  }
+  
+  if (srcLower.includes("buzzsprout.com") && srcLower.includes("player")) {
+    return { provider: "buzzsprout", aspect: 16 / 4 };
+  }
+  
+  if (srcLower.includes("share.transistor.fm")) {
+    return { provider: "transistor", aspect: 16 / 5 };
+  }
+  
+  if (srcLower.includes("player.megaphone.fm")) {
+    return { provider: "megaphone", aspect: 16 / 4 };
+  }
+  
+  if (srcLower.includes("widget.spreaker.com")) {
+    return { provider: "spreaker", aspect: 16 / 5 };
+  }
+  
+  // Social Media Platforms
+  if (srcLower.includes("tiktok.com/embed") || srcLower.includes("tiktok.com/player")) {
+    return { provider: "tiktok", aspect: 9 / 16, scrollable: true };
+  }
+  
+  if (srcLower.includes("instagram.com") && (srcLower.includes("/embed") || srcLower.includes("/p/"))) {
+    return { provider: "instagram", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("facebook.com/plugins/video")) {
+    return { provider: "facebook", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("facebook.com/plugins/post")) {
+    return { provider: "facebook", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("redditmedia.com") ||
+      (srcLower.includes("reddit.com") && srcLower.includes("embed"))) {
+    return { provider: "reddit", aspect: 4 / 3, scrollable: true };
+  }
+  
+  if (srcLower.includes("platform.twitter.com") || srcLower.includes("twitframe.com")) {
+    return { provider: "twitter", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("tumblr.com/post")) {
+    return { provider: "tumblr", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("linkedin.com/embed") || srcLower.includes("linkedin.com/post")) {
+    return { provider: "linkedin", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("threads.net") && srcLower.includes("embed")) {
+    return { provider: "threads", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("bsky.app") || srcLower.includes("embed.bsky")) {
+    return { provider: "bluesky", aspect: 4 / 5, scrollable: true };
+  }
+  
+  // Mastodon (various instances)
+  if (srcLower.includes("/embed") && (
+      srcLower.includes("mastodon") || 
+      srcLower.includes("mstdn") ||
+      srcLower.includes("fosstodon") ||
+      srcLower.includes("hachyderm") ||
+      srcLower.includes("infosec.exchange")
+  )) {
+    return { provider: "mastodon", aspect: 4 / 5, scrollable: true };
+  }
+  
+  // Image/GIF Platforms
+  if (srcLower.includes("assets.pinterest.com") ||
+      (srcLower.includes("pinterest.com") && srcLower.includes("embed"))) {
+    return { provider: "pinterest", aspect: 2 / 3, scrollable: true };
+  }
+  
+  if (srcLower.includes("giphy.com/embed")) {
+    return { provider: "giphy", aspect: 1 };
+  }
+  
+  if (srcLower.includes("imgur.com") && (srcLower.includes("embed") || srcLower.includes("/a/"))) {
+    return { provider: "imgur", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("gfycat.com/ifr")) {
+    return { provider: "gfycat", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("tenor.com/embed")) {
+    return { provider: "tenor", aspect: 1 };
+  }
+  
+  if (srcLower.includes("flickr.com/photos") && srcLower.includes("player")) {
+    return { provider: "flickr", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("coub.com/embed")) {
+    return { provider: "coub", aspect: 16 / 9 };
+  }
+  
+  // Code/Development Platforms
+  if (srcLower.includes("codepen.io") && srcLower.includes("embed")) {
+    return { provider: "codepen", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("jsfiddle.net") && srcLower.includes("embedded")) {
+    return { provider: "jsfiddle", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("gist.github.com")) {
+    return { provider: "github-gist", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("replit.com") && srcLower.includes("embed")) {
+    return { provider: "replit", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("glitch.com/embed")) {
+    return { provider: "glitch", aspect: 16 / 9, scrollable: true };
+  }
+  
+  // Design/Collaboration Platforms
+  if (srcLower.includes("figma.com/embed") || srcLower.includes("figma.com/file")) {
+    return { provider: "figma", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("canva.com/design") && srcLower.includes("embed")) {
+    return { provider: "canva", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("miro.com/app/embed") || srcLower.includes("miro.com/app/board")) {
+    return { provider: "miro", aspect: 16 / 9, scrollable: true };
+  }
+  
+  // Productivity/Forms Platforms
+  if (srcLower.includes("notion.so") || srcLower.includes("notion.site")) {
+    return { provider: "notion", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("airtable.com/embed")) {
+    return { provider: "airtable", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("typeform.com/to")) {
+    return { provider: "typeform", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("docs.google.com/forms")) {
+    return { provider: "google-forms", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("docs.google.com/document")) {
+    return { provider: "google-docs", aspect: 8.5 / 11, scrollable: true };
+  }
+  
+  if (srcLower.includes("docs.google.com/spreadsheets")) {
+    return { provider: "google-sheets", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("docs.google.com/presentation")) {
+    return { provider: "google-slides", aspect: 16 / 9 };
+  }
+  
+  // Presentation Platforms
+  if (srcLower.includes("slideshare.net") && srcLower.includes("embed")) {
+    return { provider: "slideshare", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("prezi.com/embed") || srcLower.includes("prezi.com/view")) {
+    return { provider: "prezi", aspect: 16 / 9 };
+  }
+  
+  // Cloud Storage/Preview
+  if (srcLower.includes("drive.google.com") && srcLower.includes("preview")) {
+    return { provider: "googledrive", aspect: 16 / 9 };
+  }
+  
+  if (srcLower.includes("dropbox.com") && srcLower.includes("embed")) {
+    return { provider: "dropbox", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("onedrive.live.com/embed")) {
+    return { provider: "onedrive", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("app.box.com/embed")) {
+    return { provider: "box", aspect: 16 / 9, scrollable: true };
+  }
+  
+  // Maps
+  if (srcLower.includes("google.com/maps") || srcLower.includes("maps.google.com")) {
+    return { provider: "googlemaps", aspect: 4 / 3, scrollable: true };
+  }
+  
+  // Chat/Community
+  if (srcLower.includes("discord.com/widget") || srcLower.includes("discordapp.com/widget")) {
+    return { provider: "discord", aspect: 350 / 500, scrollable: true };
+  }
+  
+  if (srcLower.includes("twitch.tv") && srcLower.includes("chat")) {
+    return { provider: "twitch-chat", aspect: 350 / 500, scrollable: true };
+  }
+  
+  // Event Platforms
+  if (srcLower.includes("calendly.com")) {
+    return { provider: "calendly", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("eventbrite.com") && srcLower.includes("widget")) {
+    return { provider: "eventbrite", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("meetup.com") && srcLower.includes("widget")) {
+    return { provider: "meetup", aspect: 16 / 9, scrollable: true };
+  }
+  
+  // Educational/Project Management
+  if (srcLower.includes("padlet.com/embed")) {
+    return { provider: "padlet", aspect: 16 / 9, scrollable: true };
+  }
+  
+  if (srcLower.includes("trello.com") && srcLower.includes("embed")) {
+    return { provider: "trello", aspect: 16 / 9, scrollable: true };
+  }
+  
+  // Publishing Platforms
+  if (srcLower.includes("medium.com") && srcLower.includes("embed")) {
+    return { provider: "medium", aspect: 4 / 5, scrollable: true };
+  }
+  
+  if (srcLower.includes("substack.com") && srcLower.includes("embed")) {
+    return { provider: "substack", aspect: 4 / 5, scrollable: true };
+  }
+
+  return { provider: "generic", aspect: 16 / 9 };
 }
 
 // ==========================
@@ -636,37 +1127,300 @@ function refreshWindow(win) {
 }
 
 // ==========================
-// Copy URL to Clipboard
+// Copy URL/Embed to Clipboard
 // ==========================
 function copyWindowUrl(win) {
   const meta = winMeta.get(win);
   if (!meta?.url) return;
 
-  navigator.clipboard.writeText(meta.url).then(() => {
+  const textToCopy = meta.url;
+  const isEmbed = textToCopy.includes("<");
+  
+  navigator.clipboard.writeText(textToCopy).then(() => {
     const copyBtn = win.querySelector(".copy-btn");
     if (copyBtn) {
       const original = copyBtn.innerHTML;
       copyBtn.innerHTML = "✓";
-      copyBtn.title = "Copied!";
+      copyBtn.title = isEmbed ? "Embed copied!" : "URL copied!";
       setTimeout(() => {
         copyBtn.innerHTML = original;
-        copyBtn.title = "Copy URL";
+        copyBtn.title = isEmbed ? "Copy embed" : "Copy URL";
       }, 1500);
     }
   }).catch(() => {
+    // Fallback for older browsers
     const textarea = document.createElement("textarea");
-    textarea.value = meta.url;
+    textarea.value = textToCopy;
     textarea.style.position = "fixed";
     textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
     document.body.appendChild(textarea);
     textarea.select();
-    document.execCommand("copy");
+    try {
+      document.execCommand("copy");
+      const copyBtn = win.querySelector(".copy-btn");
+      if (copyBtn) {
+        const original = copyBtn.innerHTML;
+        copyBtn.innerHTML = "✓";
+        setTimeout(() => {
+          copyBtn.innerHTML = original;
+        }, 1500);
+      }
+    } catch (e) {
+      console.error("Copy failed:", e);
+    }
     document.body.removeChild(textarea);
   });
 }
 
 // ==========================
-// Video Creation
+// Embed Blockquote Processing
+// ==========================
+
+function extractFirstMatchingLink(root, predicate) {
+  const links = root.querySelectorAll("a[href]");
+  for (const a of links) {
+    const href = a.getAttribute("href") || "";
+    if (predicate(href)) return href;
+  }
+  return "";
+}
+
+function processBlockquoteEmbed(temp) {
+  // Twitter/X - multiple formats
+  const twitterBlock = temp.querySelector(
+    'blockquote.twitter-tweet, blockquote.twitter-video, ' +
+    'blockquote[class*="twitter"], [data-tweet-id], ' +
+    'div.twitter-tweet'
+  );
+  if (twitterBlock) {
+    const tweetUrl = extractFirstMatchingLink(temp, (u) => 
+      /https?:\/\/(x\.com|twitter\.com)\/\w+\/(status|statuses)\/\d+/i.test(u)
+    );
+    if (tweetUrl) {
+      return { type: "url", url: tweetUrl };
+    }
+  }
+
+  // Instagram - multiple formats
+  const instagramBlock = temp.querySelector(
+    'blockquote.instagram-media, blockquote[data-instgrm-permalink], ' +
+    'blockquote[data-instgrm-captioned], [class*="instagram-embed"], ' +
+    'div.instagram-media'
+  );
+  if (instagramBlock) {
+    const instaUrl = instagramBlock.getAttribute("data-instgrm-permalink") ||
+                     instagramBlock.getAttribute("data-instgrm-captioned") ||
+                     extractFirstMatchingLink(temp, (u) => 
+                       /https?:\/\/(www\.)?instagram\.com\/(p|reel|tv|stories)\/[\w-]+/i.test(u)
+                     );
+    if (instaUrl) {
+      return { type: "url", url: instaUrl };
+    }
+  }
+
+  // TikTok
+  const tiktokBlock = temp.querySelector(
+    'blockquote.tiktok-embed, blockquote[cite*="tiktok.com"], ' +
+    '[data-video-id][class*="tiktok"], div.tiktok-embed'
+  );
+  if (tiktokBlock) {
+    const tiktokUrl = tiktokBlock.getAttribute("cite") ||
+                      tiktokBlock.getAttribute("data-video-url") ||
+                      extractFirstMatchingLink(temp, (u) =>
+                        /https?:\/\/(www\.|vm\.|vt\.)?tiktok\.com\//i.test(u)
+                      );
+    if (tiktokUrl) {
+      return { type: "url", url: tiktokUrl };
+    }
+  }
+
+  // Reddit
+  const redditBlock = temp.querySelector(
+    'blockquote.reddit-embed-bq, blockquote[class*="reddit"], ' +
+    '[data-embed-created], div.reddit-embed'
+  );
+  if (redditBlock) {
+    const redditUrl = extractFirstMatchingLink(temp, (u) =>
+      /https?:\/\/(www\.|old\.|new\.)?reddit\.com\/(r\/|user\/)/i.test(u)
+    );
+    if (redditUrl) {
+      return { type: "url", url: redditUrl };
+    }
+  }
+
+  // Threads (Meta)
+  const threadsBlock = temp.querySelector(
+    'blockquote.text-post-media, blockquote[cite*="threads.net"], ' +
+    'blockquote[data-threads-permalink]'
+  );
+  if (threadsBlock) {
+    const threadsUrl = threadsBlock.getAttribute("cite") ||
+                       threadsBlock.getAttribute("data-threads-permalink") ||
+                       extractFirstMatchingLink(temp, (u) =>
+                         /https?:\/\/(www\.)?threads\.net\//i.test(u)
+                       );
+    if (threadsUrl) {
+      return { type: "url", url: threadsUrl };
+    }
+  }
+
+  // Bluesky
+  const bskyBlock = temp.querySelector(
+    'blockquote[data-bluesky-uri], [class*="bluesky-embed"], ' +
+    'blockquote[cite*="bsky.app"]'
+  );
+  if (bskyBlock) {
+    const bskyUrl = bskyBlock.getAttribute("data-bluesky-uri") ||
+                    bskyBlock.getAttribute("cite") ||
+                    extractFirstMatchingLink(temp, (u) =>
+                      /https?:\/\/bsky\.app\//i.test(u)
+                    );
+    if (bskyUrl) {
+      return { type: "url", url: bskyUrl };
+    }
+  }
+
+  // Tumblr
+  const tumblrBlock = temp.querySelector(
+    'div.tumblr-post, [data-href*="tumblr.com"], ' +
+    'blockquote[class*="tumblr"]'
+  );
+  if (tumblrBlock) {
+    const tumblrUrl = tumblrBlock.getAttribute("data-href") ||
+                      extractFirstMatchingLink(temp, (u) =>
+                        /https?:\/\/[\w-]+\.tumblr\.com\/post\//i.test(u)
+                      );
+    if (tumblrUrl) {
+      return { type: "url", url: tumblrUrl };
+    }
+  }
+
+  // LinkedIn
+  const linkedinBlock = temp.querySelector(
+    '[data-li-embed], blockquote[class*="linkedin"]'
+  );
+  if (linkedinBlock) {
+    const linkedinUrl = extractFirstMatchingLink(temp, (u) =>
+      /https?:\/\/(www\.)?linkedin\.com\/(posts|embed|pulse)\//i.test(u)
+    );
+    if (linkedinUrl) {
+      return { type: "url", url: linkedinUrl };
+    }
+  }
+
+  // Mastodon (various instances)
+  const mastodonBlock = temp.querySelector(
+    'iframe[src*="/embed"], [class*="mastodon-embed"]'
+  );
+  if (mastodonBlock) {
+    const src = mastodonBlock.getAttribute("src");
+    if (src && src.includes("/embed")) {
+      return { type: "embed", src: src, provider: "mastodon" };
+    }
+  }
+
+  return null;
+}
+
+// ==========================
+// Embed Div Processing
+// ==========================
+
+function processDivEmbed(temp) {
+  // Facebook video
+  const fbVideoDiv = temp.querySelector(
+    '.fb-video[data-href], .fb-video[data-uri], ' +
+    'div[data-href*="facebook.com"], div[data-uri*="facebook.com"], ' +
+    'div[data-href*="fb.watch"]'
+  );
+  if (fbVideoDiv) {
+    const href = fbVideoDiv.getAttribute("data-href") || 
+                 fbVideoDiv.getAttribute("data-uri") || "";
+    if (href) {
+      return { type: "url", url: href };
+    }
+  }
+
+  // Facebook post
+  const fbPostDiv = temp.querySelector('.fb-post[data-href], .fb-post[data-uri]');
+  if (fbPostDiv) {
+    const href = fbPostDiv.getAttribute("data-href") ||
+                 fbPostDiv.getAttribute("data-uri") || "";
+    if (href) {
+      return { type: "url", url: href };
+    }
+  }
+
+  // Pinterest
+  const pinDiv = temp.querySelector(
+    'a[data-pin-do="embedPin"], [data-pin-id], ' +
+    '[class*="pinterest-embed"], a[href*="pinterest.com/pin/"]'
+  );
+  if (pinDiv) {
+    const pinUrl = pinDiv.getAttribute("href") ||
+                   extractFirstMatchingLink(temp, (u) =>
+                     /https?:\/\/(www\.)?pinterest\.(com|co\.uk|de|fr|es|it|ca|au)\/pin\//i.test(u)
+                   );
+    if (pinUrl) {
+      return { type: "url", url: pinUrl };
+    }
+  }
+
+  // Spotify (sometimes embedded as divs)
+  const spotifyDiv = temp.querySelector(
+    '[data-spotify-id], [class*="spotify-embed"]'
+  );
+  if (spotifyDiv) {
+    const spotifyUrl = extractFirstMatchingLink(temp, (u) =>
+      /https?:\/\/open\.spotify\.com\/(track|album|playlist|episode|show)\//i.test(u)
+    );
+    if (spotifyUrl) {
+      return { type: "url", url: spotifyUrl };
+    }
+  }
+
+  // SoundCloud
+  const soundcloudDiv = temp.querySelector(
+    '[data-soundcloud], [class*="soundcloud-embed"]'
+  );
+  if (soundcloudDiv) {
+    const soundcloudUrl = extractFirstMatchingLink(temp, (u) =>
+      /https?:\/\/(www\.)?soundcloud\.com\//i.test(u)
+    );
+    if (soundcloudUrl) {
+      return { type: "url", url: soundcloudUrl };
+    }
+  }
+
+  // YouTube (sometimes in divs)
+  const ytDiv = temp.querySelector(
+    '[data-youtube-id], [data-video-id], [class*="youtube-embed"]'
+  );
+  if (ytDiv) {
+    const ytId = ytDiv.getAttribute("data-youtube-id") || 
+                 ytDiv.getAttribute("data-video-id");
+    if (ytId && /^[A-Za-z0-9_-]{11}$/.test(ytId)) {
+      return { type: "url", url: `https://www.youtube.com/watch?v=${ytId}` };
+    }
+  }
+
+  // Giphy
+  const giphyDiv = temp.querySelector(
+    '[data-giphy-id], [class*="giphy-embed"]'
+  );
+  if (giphyDiv) {
+    const giphyId = giphyDiv.getAttribute("data-giphy-id");
+    if (giphyId) {
+      return { type: "url", url: `https://giphy.com/gifs/${giphyId}` };
+    }
+  }
+
+  return null;
+}
+
+// ==========================
+// Video Creation from URL
 // ==========================
 function createVideoFromUrl(rawUrl) {
   const trimmed = rawUrl.trim();
@@ -686,19 +1440,40 @@ function createVideoFromUrl(rawUrl) {
   });
 }
 
-function extractFirstMatchingLink(root, predicate) {
-  const links = root.querySelectorAll("a[href]");
-  for (const a of links) {
-    const href = a.getAttribute("href") || "";
-    if (predicate(href)) return href;
-  }
-  return "";
+// ==========================
+// Helper: Create Window from URL but Store Original Embed
+// ==========================
+
+function createVideoWindowFromUrlWithOriginal(url, originalEmbed) {
+  const trimmed = url.trim();
+  if (!trimmed) return;
+
+  const urlObj = safeParseURL(trimmed);
+  const spec = buildEmbedSpecFromUrl(urlObj, trimmed);
+
+  if (!spec) return;
+
+  createVideoWindow({
+    aspectRatio: spec.aspect,
+    mountContent: spec.mount,
+    provider: spec.provider,
+    url: originalEmbed, // Store original embed code instead of converted URL
+    scrollable: spec.scrollable,
+  });
 }
+
+// ==========================
+// Video Creation from Embed
+// ==========================
 
 function createVideoFromEmbed(embedHtml) {
   const html = embedHtml.trim();
   if (!html) return;
 
+  // Store original embed code for copy functionality
+  const originalInput = html;
+
+  // If it's just a URL (no HTML tags), use URL handler but preserve original
   if (!/[<]/.test(html) && /^https?:\/\//i.test(html)) {
     createVideoFromUrl(html);
     return;
@@ -707,48 +1482,63 @@ function createVideoFromEmbed(embedHtml) {
   const temp = document.createElement("div");
   temp.innerHTML = html;
 
-  const twitterBlock = temp.querySelector("blockquote.twitter-tweet, blockquote[data-theme]");
-  if (twitterBlock) {
-    const tweetUrl = extractFirstMatchingLink(temp, (u) => /https?:\/\/(x\.com|twitter\.com)\//i.test(u));
-    if (tweetUrl) {
-      createVideoFromUrl(tweetUrl);
-      return;
-    }
+  // Try blockquote-based embeds first
+  const blockquoteResult = processBlockquoteEmbed(temp);
+  if (blockquoteResult?.type === "url") {
+    createVideoWindowFromUrlWithOriginal(blockquoteResult.url, originalInput);
+    return;
   }
 
-  const fbVideoDiv = temp.querySelector(".fb-video[data-href], .fb-video[data-uri]");
-  if (fbVideoDiv) {
-    const href = fbVideoDiv.getAttribute("data-href") || fbVideoDiv.getAttribute("data-uri") || "";
-    if (href) {
-      createVideoFromUrl(href);
-      return;
-    }
+  // Try div-based embeds
+  const divResult = processDivEmbed(temp);
+  if (divResult?.type === "url") {
+    createVideoWindowFromUrlWithOriginal(divResult.url, originalInput);
+    return;
   }
 
+  // Check for Facebook plugin iframe and preserve original
   const firstIframe = temp.querySelector("iframe");
   if (firstIframe) {
     const src = firstIframe.getAttribute("src") || "";
     const fbHref = getFacebookHrefFromPluginSrc(src);
     if (fbHref) {
-      createVideoFromUrl(fbHref);
+      createVideoWindowFromUrlWithOriginal(fbHref, originalInput);
       return;
     }
   }
 
+  // Remove scripts for safety but preserve structure
   temp.querySelectorAll("script").forEach((s) => s.remove());
 
+  // Detect provider and aspect from media elements
+  let detectedProvider = "generic";
   let aspect = 16 / 9;
-  const mediaEls = temp.querySelectorAll("iframe, embed, video");
+  let scrollable = false;
+
+  const mediaEls = temp.querySelectorAll("iframe, embed, video, object, audio");
 
   if (mediaEls.length > 0) {
     const first = mediaEls[0];
+    const src = first.getAttribute("src") || 
+                first.getAttribute("data") || 
+                first.getAttribute("data-src") || "";
+    
+    // Detect provider from src
+    const detected = detectProviderFromSrc(src);
+    detectedProvider = detected.provider;
+    scrollable = detected.scrollable || false;
+    
+    // Try to get aspect from attributes first
     const wAttr = parseInt(first.getAttribute("width"), 10);
     const hAttr = parseInt(first.getAttribute("height"), 10);
 
-    if (!Number.isNaN(wAttr) && !Number.isNaN(hAttr) && hAttr !== 0) {
+    if (!Number.isNaN(wAttr) && !Number.isNaN(hAttr) && hAttr !== 0 && wAttr !== 0) {
       aspect = wAttr / hAttr;
+    } else {
+      aspect = detected.aspect || 16 / 9;
     }
 
+    // Normalize media elements for responsive display
     mediaEls.forEach((el) => {
       el.removeAttribute("width");
       el.removeAttribute("height");
@@ -756,41 +1546,60 @@ function createVideoFromEmbed(embedHtml) {
       el.style.height = "100%";
       el.style.border = "none";
 
-      if (el.tagName.toLowerCase() === "video") {
+      const tagName = el.tagName.toLowerCase();
+
+      if (tagName === "video" || tagName === "audio") {
         el.style.objectFit = "contain";
         el.setAttribute("playsinline", "true");
+        el.setAttribute("controls", "true");
       }
-      if (el.tagName.toLowerCase() === "iframe") {
+      if (tagName === "iframe") {
         el.style.display = "block";
-        el.scrolling = "no";
+        el.scrolling = scrollable ? "auto" : "no";
+        // Ensure proper attributes
+        el.setAttribute("allowfullscreen", "true");
+        el.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
+      }
+      if (tagName === "embed" || tagName === "object") {
+        el.style.display = "block";
       }
     });
   }
 
-  let embedUrl = "";
-  if (firstIframe) {
-    embedUrl = firstIframe.getAttribute("src") || "";
-  }
+  // Handle object/embed elements
+  const objectEls = temp.querySelectorAll("object, embed");
+  objectEls.forEach((el) => {
+    el.style.width = "100%";
+    el.style.height = "100%";
+  });
+
+  const processedHtml = temp.innerHTML;
 
   createVideoWindow({
     aspectRatio: aspect,
-    provider: "generic",
-    url: embedUrl,
-    scrollable: false,
+    provider: detectedProvider,
+    url: originalInput, // Store original embed code for copy
+    scrollable: scrollable,
     mountContent(contentEl) {
-      contentEl.innerHTML = temp.innerHTML;
+      contentEl.innerHTML = processedHtml;
 
-      const anyMedia = contentEl.querySelectorAll("iframe, embed, video");
+      // Re-apply styles after mounting
+      const anyMedia = contentEl.querySelectorAll("iframe, embed, video, object, audio");
       anyMedia.forEach((el) => {
         el.style.width = "100%";
         el.style.height = "100%";
         el.style.border = "none";
-        if (el.tagName.toLowerCase() === "video") {
+        
+        const tagName = el.tagName.toLowerCase();
+        
+        if (tagName === "video" || tagName === "audio") {
           el.style.objectFit = "contain";
         }
-        if (el.tagName.toLowerCase() === "iframe") {
+        if (tagName === "iframe") {
           el.style.display = "block";
-          el.scrolling = "no";
+          if (!scrollable) {
+            el.scrolling = "no";
+          }
         }
       });
     },
@@ -861,8 +1670,9 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   copyBtn.className = "toolbar-btn copy-btn";
   copyBtn.type = "button";
   copyBtn.innerHTML = "⧉";
-  copyBtn.title = "Copy URL";
-  copyBtn.setAttribute("aria-label", "Copy URL");
+  // Set initial title based on whether URL is embed code
+  copyBtn.title = url.includes("<") ? "Copy embed" : "Copy URL";
+  copyBtn.setAttribute("aria-label", url.includes("<") ? "Copy embed code" : "Copy URL");
 
   leftGroup.appendChild(moveHandle);
   leftGroup.appendChild(copyBtn);

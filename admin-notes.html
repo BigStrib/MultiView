@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiView|Documentaion</title>
+  <style>
+        :root {
+            --bg-black: #050505;
+            --panel-bg: #0f0f0f;
+            --accent-red: #8b0000;
+            --text-main: #e0e0e0;
+            --text-muted: #888888;
+            --green-check: #2ecc71;
+            --bright-red: #e74c3c;
+            --border-color: #1a1a1a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        html, body {
+            min-height: 100%;
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        @media (min-width: 769px) {
+            html, body { height: 100%; overflow: hidden; }
+        }
+
+        body { display: flex; flex-direction: column; }
+
+        header {
+            flex: 0 0 auto;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #000;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .logo-group { display: flex; align-items: center; gap: 10px; }
+        .logo-svg { width: 22px; height: 22px; fill: var(--accent-red); }
+        .logo-text { font-size: 1rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .mv-link { color: var(--accent-red); text-decoration: none; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; transition: color 0.2s ease; }
+        .mv-link:hover { color: var(--text-muted); }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 20px;
+            gap: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .search-container { flex: 0 0 auto; z-index: 5; }
+
+        #liveSearch {
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            border-radius: 4px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 0;
+        }
+
+        /* FIXED HEIGHT FOR TOP SECTION */
+        .top-row {
+            display: flex;
+            gap: 15px;
+            height: 360px;
+            flex: 0 0 auto;
+        }
+
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* SCROLLABLE FIXED CONTENT */
+        .scroll-div {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-red) transparent;
+        }
+
+        .scroll-div::-webkit-scrollbar { width: 5px; }
+        .scroll-div::-webkit-scrollbar-track { background: transparent; }
+        .scroll-div::-webkit-scrollbar-thumb {
+            background: var(--accent-red);
+            border-radius: 10px;
+        }
+
+        /* FIXED HEIGHT NOTES */
+        .notes-section {
+            height: 160px;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .content-area.notes-expanded .notes-section {
+            height: calc(100% - 40px);
+        }
+
+        @media (min-width: 769px) {
+            .content-area.notes-expanded .top-row {
+                display: none;
+            }
+        }
+
+        .note-header-group { display: flex; align-items: center; gap: 4px; }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            transition: transform 0.4s ease;
+        }
+
+        .expand-btn svg { width: 14px; height: 14px; fill: var(--text-muted); }
+
+        .content-area.notes-expanded .expand-btn {
+            transform: rotate(180deg);
+        }
+
+        .list-item { display: block; margin-bottom: 4px; }
+
+        .highlight {
+            color: var(--bright-red);
+            font-weight: bold;
+            background: rgba(139, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .top-row { height: auto; }
+            .scroll-div { max-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-group">
+            <svg class="logo-svg" viewBox="0 0 24 24">
+                <rect x="2" y="2" width="9" height="9" rx="1"></rect>
+                <rect x="13" y="2" width="9" height="9" rx="1"></rect>
+                <rect x="2" y="13" width="9" height="9" rx="1"></rect>
+                <rect x="13" y="13" width="9" height="9" rx="1"></rect>
+            </svg>
+            <span class="logo-text">MultiView</span>
+        </div>
+        <a href="index.html" target="_blank" class="mv-link">Multiview</a>
+    </header>
+
+    <main>
+        <div class="search-container">
+            <input type="text" id="liveSearch" placeholder="Filter all content...">
+        </div>
+
+        <div class="content-area" id="mainContent">
+            <div class="top-row">
+                <section class="column">
+                    <div class="status-header">
+                        <span style="color:var(--green-check)">✔</span> 
+                        <span class="label">Compatible</span>
+                    </div>
+                    <div class="scroll-div">
+                        <span class="list-item">• Youtube-URL</span>
+                        <span class="list-item">• Facebook-Certain Videos-URL</span>
+                        <span class="list-item">• Kick-URL</span>
+                        <span class="list-item">• Twitch-URL</span>
+                        <span class="list-item">• X/Twitter-URL Wonky but works</span>
+                        <span class="list-item">• Vimeo-URL</span>
+                        <span class="list-item">• Rumble-Embed Code</span>
+                        <span class="list-item">• PeerTube-Embed Code</span>
+                        <span class="list-item">• Odysee-Embed Code</span>
+                        <span class="list-item">• BitChute-Embed Code</span>
+                        <span class="list-item">• archive.org-Embed Code</span>
+                        <span class="list-item">• Giphy-Embed Code</span>
+                        <span class="list-item">• SoundCloud-Embed Code</span>
+						
+					
+
+                    </div>
+                </section>
+
+                <section class="column">
+                    <div class="status-header">
+                        <span style="color:var(--bright-red)">✖</span> 
+                        <span class="label">Incompatible</span>
+                    </div>
+                    <div class="scroll-div">
+                        <span class="list-item">• Tiktok</span>
+                        <span class="list-item">• Reddit</span>
+                        <span class="list-item">• Pinterest</span>
+                        <span class="list-item">• Instagram</span>
+                        <span class="list-item">• Mastodon.social</span>
+                    </div>
+                </section>
+            </div>
+
+            <section class="notes-section">
+                <div class="status-header">
+                    <div class="note-header-group">
+                        <span style="color:var(--text-muted)">📄</span> 
+                        <span class="label">System Notes</span>
+                        <button class="expand-btn" id="toggleNotes">
+                            <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+                        </button>
+                    </div>
+                </div>
+              <div class="scroll-div">
+    <span class="list-item">• For any questions, tips, or concerns, please email me at Blakebigstrib@gmail.com.</span>
+    <span class="list-item">• Certain websites can be displayed on Multiview; however, some are blocked by security features.</span>
+    <span class="list-item">• If a certain URL does not work, try using the embed feature if there is one.</span>
+    <span class="list-item">• I could not figure out how to use standard URLs for Rumble videos, so you must use the embed code.</span>
+    <span class="list-item">• Some embed codes on my incompatible list may work in non-traditional ways.</span>
+    <span class="list-item">• I cannot list every embed code in the Compatible section, as the list would potentially be very large.</span>
+    <span class="list-item">• This is a list that I have personally verified as working or not working.</span>
+    <span class="list-item">• Some Facebook videos can play in the player; others have privacy settings enabled.</span>
+    <span class="list-item">• Make sure you paste the correct code into the correct input. Anything embedded should be placed in the embed input, and URLs must be placed in the URL input.</span>
+    <span class="list-item">• I will update this as I find more compatible and incompatible URLs and embed codes.</span>
+</div>
+
+
+					
+					
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById('liveSearch');
+        const mainContent = document.getElementById('mainContent');
+        const toggleBtn = document.getElementById('toggleNotes');
+        const items = document.querySelectorAll('.list-item');
+
+        toggleBtn.addEventListener('click', () => {
+            mainContent.classList.toggle('notes-expanded');
+        });
+
+        const originalTexts = Array.from(items).map(item => item.textContent);
+
+        searchInput.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            items.forEach((item, index) => {
+                const text = originalTexts[index];
+                if (filter === "") {
+                    item.style.display = "block";
+                    item.innerHTML = text;
+                    return;
+                }
+                if (text.toLowerCase().includes(filter)) {
+                    item.style.display = "block";
+                    const regex = new RegExp(`(${filter})`, 'gi');
+                    item.innerHTML = text.replace(regex, '<span class="highlight">$1</span>');
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
