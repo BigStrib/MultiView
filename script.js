@@ -17,7 +17,7 @@ const addEmbedBtn = document.getElementById("addEmbedBtn");
 
 const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 
-const TWITCH_PARENT_DOMAIN = "https://multiviewplayer.pages.dev/";
+const TWITCH_PARENT_DOMAIN = "multiviewplayer.pages.dev";
 
 let zCounter = 10;
 let activeAction = null;
@@ -2035,4 +2035,5 @@ window.addEventListener("resize", () => {
       triggerResizeEnd(win);
     });
   }, 150);
+
 });
