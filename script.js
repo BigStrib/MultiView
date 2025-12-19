@@ -17,7 +17,7 @@ const addEmbedBtn = document.getElementById("addEmbedBtn");
 
 const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 
-const TWITCH_PARENT_DOMAIN = "bigstrib.github.io";
+const TWITCH_PARENT_DOMAIN = "https://multiviewplayer.pages.dev/";
 
 let zCounter = 10;
 let activeAction = null;
