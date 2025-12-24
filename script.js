@@ -288,17 +288,18 @@ function createIframeEl({ src, title, allow, referrerPolicy, scrollable = false 
   );
   iframe.setAttribute("referrerpolicy", referrerPolicy || "strict-origin-when-cross-origin");
 
+  // Style overrides for global top-alignment
   iframe.style.width = "100%";
   iframe.style.height = "100%";
   iframe.style.border = "none";
   iframe.style.display = "block";
+  iframe.style.verticalAlign = "top"; // Ensures no baseline gaps at the top
   
   // Control scrolling based on content type
   iframe.scrolling = scrollable ? "auto" : "no";
 
   return iframe;
 }
-
 // ==========================
 // YouTube Provider
 // ==========================
@@ -647,11 +648,19 @@ function detectProviderFromSrc(src) {
   }
   
   // Image/GIF Platforms
-  if (srcLower.includes("assets.pinterest.com") ||
-      (srcLower.includes("pinterest.com") && srcLower.includes("embed"))) {
-    return { provider: "pinterest", aspect: 2 / 3, scrollable: true };
-  }
-  
+// Check for the specific embed assets or the general domain
+const isPinterestEmbed = srcLower.includes("assets.pinterest.com/ext/embed.html");
+const isGeneralPinterest = srcLower.includes("pinterest.com") && srcLower.includes("embed");
+
+if (isPinterestEmbed || isGeneralPinterest) {
+  return { 
+    provider: "pinterest", 
+    // The specific URL you gave has a fixed height/width 
+    // 236/439 is roughly 0.537, which is close to 9:16 or 2:3
+    aspect: 236 / 439, 
+    scrollable: false // Embeds are usually fixed size
+  };
+}
   if (srcLower.includes("giphy.com/embed")) {
     return { provider: "giphy", aspect: 1 };
   }
@@ -1127,7 +1136,7 @@ function refreshWindow(win) {
 }
 
 // ==========================
-// Copy URL/Embed to Clipboard
+// Copy URL/Embed to Clipboard (with temporary ✓ icon)
 // ==========================
 function copyWindowUrl(win) {
   const meta = winMeta.get(win);
@@ -1135,20 +1144,38 @@ function copyWindowUrl(win) {
 
   const textToCopy = meta.url;
   const isEmbed = textToCopy.includes("<");
-  
-  navigator.clipboard.writeText(textToCopy).then(() => {
-    const copyBtn = win.querySelector(".copy-btn");
-    if (copyBtn) {
-      const original = copyBtn.innerHTML;
-      copyBtn.innerHTML = "✓";
-      copyBtn.title = isEmbed ? "Embed copied!" : "URL copied!";
-      setTimeout(() => {
-        copyBtn.innerHTML = original;
-        copyBtn.title = isEmbed ? "Copy embed" : "Copy URL";
-      }, 1500);
+  const copyBtn = win.querySelector(".copy-btn");
+  if (!copyBtn) return;
+
+  const COPY_ICON = "⧉";  // normal copy icon
+  const CHECK_ICON = "✓"; // shown briefly after copy
+
+  function showCopiedState() {
+    copyBtn.innerHTML = CHECK_ICON;
+    copyBtn.title = isEmbed ? "Embed copied!" : "URL copied!";
+
+    if (copyBtn._resetTimeout) {
+      clearTimeout(copyBtn._resetTimeout);
     }
-  }).catch(() => {
-    // Fallback for older browsers
+
+    copyBtn._resetTimeout = setTimeout(() => {
+      copyBtn.innerHTML = COPY_ICON;
+      copyBtn.title = isEmbed ? "Copy embed" : "Copy URL";
+      copyBtn._resetTimeout = null;
+    }, 1000);
+  }
+
+  // Modern API
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(textToCopy)
+      .then(showCopiedState)
+      .catch(() => fallbackCopy());
+  } else {
+    fallbackCopy();
+  }
+
+  // Fallback for older browsers
+  function fallbackCopy() {
     const textarea = document.createElement("textarea");
     textarea.value = textToCopy;
     textarea.style.position = "fixed";
@@ -1158,20 +1185,13 @@ function copyWindowUrl(win) {
     textarea.select();
     try {
       document.execCommand("copy");
-      const copyBtn = win.querySelector(".copy-btn");
-      if (copyBtn) {
-        const original = copyBtn.innerHTML;
-        copyBtn.innerHTML = "✓";
-        setTimeout(() => {
-          copyBtn.innerHTML = original;
-        }, 1500);
-      }
+      showCopiedState();
     } catch (e) {
       console.error("Copy failed:", e);
     }
     document.body.removeChild(textarea);
-  });
-}
+  }
+} 
 
 // ==========================
 // Embed Blockquote Processing
@@ -1778,33 +1798,38 @@ function attachWindowEvents(win) {
     refreshWindow(win);
   });
 
-  moveHandle.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+moveHandle.addEventListener("mousedown", (e) => {
+  e.preventDefault();
 
-    const rect = win.getBoundingClientRect();
-    const workspaceRect = workspace.getBoundingClientRect();
+  // 1. Increment the global z-index counter and apply it to this window
+  win.style.zIndex = ++zCounter;
 
-    activeAction = {
-      type: "move",
-      win,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
-      workspaceRect,
-      width: rect.width,
-      height: rect.height,
-      left: rect.left - workspaceRect.left,
-      top: rect.top - workspaceRect.top,
-    };
+  const rect = win.getBoundingClientRect();
+  const workspaceRect = workspace.getBoundingClientRect();
 
-    win.classList.add("moving");
-  });
+  activeAction = {
+    type: "move",
+    win,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    workspaceRect,
+    width: rect.width,
+    height: rect.height,
+    left: rect.left - workspaceRect.left,
+    top: rect.top - workspaceRect.top,
+  };
 
-  const handles = win.querySelectorAll(".resize-handle");
+  win.classList.add("moving");
+});
+
+   const handles = win.querySelectorAll(".resize-handle");
   handles.forEach((handle) => {
     handle.addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // Bring this window to the top and keep it there
+      win.style.zIndex = String(zCounter++);
 
       const corner = handle.dataset.corner;
       const style = window.getComputedStyle(win);
@@ -1838,7 +1863,7 @@ function attachWindowEvents(win) {
       }
     });
   });
-
+  
   closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     overlay.style.display = "flex";
@@ -2035,5 +2060,4 @@ window.addEventListener("resize", () => {
       triggerResizeEnd(win);
     });
   }, 150);
-
 });

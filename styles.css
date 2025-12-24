@@ -46,8 +46,7 @@ body {
   line-height: 1.5;
   overflow: hidden;
   user-select: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+
 }
 
 a:link {
@@ -69,8 +68,6 @@ a:hover {
 a:active {
   color: #e50914;
 }
-
-
 
 /* =========================
    Custom Scrollbar - Global
@@ -123,14 +120,6 @@ input[type="search"] {
   appearance: none;
 }
 
-input[type="text"]::-ms-clear,
-input[type="text"]::-ms-reveal,
-input[type="search"]::-ms-clear,
-input[type="search"]::-ms-reveal {
-  display: none;
-  width: 0;
-  height: 0;
-}
 
 input[type="search"]::-webkit-search-decoration,
 input[type="search"]::-webkit-search-cancel-button,
@@ -588,43 +577,50 @@ textarea {
 /* =========================
    Edge Tab
    ========================= */
-
 #sidebar-tab {
   position: fixed;
   top: 50%;
   left: 0;
-  transform: translate(-85%, -50%);
+  /* Shifted from -90% to -96% to hide almost the entire button body */
+  transform: translate(-96%, -50%);
   width: 36px;
   height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: rgba(255, 0, 0, 0);  
+  
+  /* Bright border for the tiny sliver that remains visible */
+  border: 0px solid rgba(255, 0, 0, 0.5);
   border-left: none;
   border-radius: 0 4px 4px 0;
+  
+  /* Added a small shadow to make the edge visible since the body is hidden */
+  box-shadow: 1px 0 4px rgba(255, 0, 0, 0.3);
+
   cursor: pointer;
-  opacity: 0;
+  opacity: 1;  
   transition:
-    opacity 0.25s ease,
     transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   z-index: 999;
 }
 
 #sidebar-tab:hover {
-  opacity: 1;
-  transform: translateY(-50%);
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  /* Resets to 0% so it slides fully out */
+  transform: translate(0, -50%);
+  background: rgba(255, 0, 0, 0.4); 
+  border-color: rgba(255, 0, 0, 0.8);
+  box-shadow: 2px 0 10px rgba(255, 0, 0, 0.4);
 }
 
 body.sidebar-open #sidebar-tab {
+  /* Match your sidebar width */
   transform: translate(260px, -50%);
-  opacity: 1;
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: rgba(255, 0, 0, 0.4);
+  border-color: rgba(255, 0, 0, 0.8);
 }
 
 .tab-svg {
@@ -645,93 +641,137 @@ body.sidebar-open .tab-svg rect {
 }
 
 /* =========================
-   Video Windows
+   Video Windows - Flat Unified UI
    ========================= */
 
+
+/* Let children extend outside the window */
 .video-window {
   position: absolute;
   background: var(--bg-video);
-  overflow: hidden;
+  overflow: visible;                 /* was: hidden */
   min-width: 240px;
   min-height: 135px;
 }
 
+/* Clickable ring on all four sides (just outside the window) */
+.video-window::before {
+  content: "";
+  position: absolute;
+  top: -14px;                        /* extend 14px above */
+  left: -14px;                       /* extend 14px to the left */
+  right: -14px;                      /* extend 14px to the right */
+  bottom: -14px;                     /* extend 14px below */
+  background: transparent;           /* invisible by default */
+  pointer-events: auto;
+  cursor: pointer;
+
+  /* Behind the actual window so it never covers toolbars/controls */
+  z-index: -1;
+}
+
+/* Make the ring a bit more visible on hover */
+.video-window:hover::before {
+  background: rgba(255, 255, 255, 0.08);  /* was ~0.03, now less transparent */
+}
+
+/* when moving or resizing, window is on top */
+.video-window.resizing,
+.video-window.moving {
+  z-index: 9999 !important;
+}
+
+
+
 .video-toolbar {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 28px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.7) 100%);
+  top: 4px; 
+  left: 8px;
+  right: 8px;
+  height: auto;
+  background: transparent !important;
+  border: none !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 6px;
-  gap: 6px;
+  padding: 0;
+  gap: 16px; 
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
   z-index: 5;
 }
 
-.video-window:hover .video-toolbar,
-.video-window.moving .video-toolbar,
+/* show toolbar on hover */
+.video-window:hover .video-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* keep toolbar visible while resizing */
 .video-window.resizing .video-toolbar {
   opacity: 1;
   pointer-events: auto;
 }
 
-.move-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 20px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  cursor: move;
-  transition: border-color 0.15s ease, color 0.15s ease;
-}
-
-.move-handle:hover {
-  border-color: var(--accent);
-  color: var(--text-main);
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 20px;
-  background: rgba(229, 57, 53, 0.15);
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.close-btn:hover {
-  background: rgba(229, 57, 53, 0.3);
-}
-
+/* Size Indicator - boxed, only visible while resizing */
 .size-indicator {
-  flex: 1;
-  text-align: center;
-  font-size: 0.7rem;
+  padding: 0 8px;
+  min-width: 80px;
+  height: 24px;
+  font-family: monospace;
+  font-size: 11px;
   font-weight: 500;
-  color: var(--text-dim);
-  opacity: 0;
+  color: #ffffff;
+  background: #1a1a1f;
+  border-radius: 2px;
+  border: 1px solid var(--border-light);
+  text-align: center;
   pointer-events: none;
-  transition: opacity 0.1s ease;
+  display: none; /* hidden by default */
 }
 
+/* Only show size indicator when the window has the .resizing class */
 .video-window.resizing .size-indicator {
-  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* All Buttons Unified: Dark Grey -> Red on Hover */
+.move-handle,
+.close-btn,
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  background: #1a1a1f !important; /* Solid dark grey fill */
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 2px;
+  box-shadow: none !important;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+/* Hover state for EVERY button (including the X) */
+.move-handle:hover,
+.close-btn:hover,
+.toolbar-btn:hover {
+  background: var(--accent) !important; /* The dark red color */
+  color: #ffffff !important;
+}
+
+/* Ensure SVG icons inside stay white */
+.move-handle svg,
+.close-btn svg,
+.toolbar-btn svg {
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 
 /* =========================
    Video Content & Scrollbar Visibility
@@ -889,7 +929,6 @@ body.sidebar-open .tab-svg rect {
 .confirm-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
   display: none;
   align-items: center;
   justify-content: center;
@@ -949,9 +988,6 @@ body.sidebar-open .tab-svg rect {
   border-color: var(--text-dim);
 }
 
-
-
-
 /* Toolbar layout */
 .video-toolbar {
   display: flex;
@@ -975,8 +1011,10 @@ body.sidebar-open .tab-svg rect {
 }
 
 .toolbar-center {
-  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
   overflow: hidden;
   padding: 0 8px;
 }
@@ -1045,24 +1083,27 @@ body.sidebar-open .tab-svg rect {
   color: #ff6b6b;
 }
 
-/* Window title */
+/* Site name pill (YouTube, Facebook, etc.) */
 .window-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 8px;
+  height: 20px;
+  max-width: 140px;
+
+  background: #141419;
+  border-radius: 999px;                  /* pill shape */
+  border: 1px solid var(--border-light);
+
   font-size: 11px;
-  font-weight: 600;
-  color: #aaa;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Size indicator */
-.size-indicator {
-  font-size: 12px;
-  color: #555;
-  margin-right: 4px;
-  font-family: monospace;
-  min-width: 70px;
-  text-align: right;
 }
