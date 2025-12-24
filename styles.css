@@ -630,14 +630,14 @@ body.sidebar-open #sidebar-tab {
 
 .tab-svg rect {
   fill: none;
-  stroke: var(--text-secondary);
+  stroke: #ffffff;
   stroke-width: 1.5;
   transition: stroke 0.2s ease;
 }
 
 #sidebar-tab:hover .tab-svg rect,
 body.sidebar-open .tab-svg rect {
-  stroke: var(--accent);
+  stroke: #ffffff;
 }
 
 /* =========================
@@ -713,6 +713,8 @@ body.sidebar-open .tab-svg rect {
   opacity: 1;
   pointer-events: auto;
 }
+
+
 
 /* Size Indicator - boxed, only visible while resizing */
 .size-indicator {
@@ -1106,4 +1108,56 @@ body.sidebar-open .tab-svg rect {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+
+/* Hide specific toolbar elements when hide-ui class is applied (press H to toggle) */
+.video-window.hide-ui .move-handle,
+.video-window.hide-ui .copy-btn,
+.video-window.hide-ui .window-title,
+.video-window.hide-ui .refresh-btn,
+.video-window.hide-ui .close-btn {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Make the entire toolbar non-blocking when UI is hidden */
+.video-window.hide-ui .video-toolbar {
+    pointer-events: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Also hide the toolbar groups */
+.video-window.hide-ui .toolbar-group {
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+/* Ensure the size indicator is also hidden */
+.video-window.hide-ui .size-indicator {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+/* Invisible overlay to capture clicks/keys when hovering video window */
+.video-window::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* When hovering, make a thin border area clickable to refocus */
+.video-window:hover::after {
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
 }

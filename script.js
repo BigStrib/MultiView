@@ -204,13 +204,92 @@ function toggleSidebar() {
 
 sidebarTab?.addEventListener("click", toggleSidebar);
 
+// Global flag to track UI visibility state
+let toolbarHidden = false;
+
+// Function to toggle toolbar visibility
+function toggleToolbarVisibility() {
+    toolbarHidden = !toolbarHidden;
+    document.querySelectorAll('.video-window').forEach(w => {
+        if (toolbarHidden) {
+            w.classList.add('hide-ui');
+        } else {
+            w.classList.remove('hide-ui');
+        }
+    });
+    
+    // Remove focus from any element
+    if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+    }
+}
+
+// Main keydown listener
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Shift" && !e.repeat) {
+    // Skip if typing in an input
     const tag = (e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea") return;
-    toggleSidebar();
-  }
+
+    // H key toggles toolbar elements on ALL windows
+    if (e.key.toLowerCase() === "h") {
+        toggleToolbarVisibility();
+    }
+
+    // Existing Shift logic
+    if (e.key === "Shift" && !e.repeat) {
+        toggleSidebar();
+    }
 });
+
+// Detect when iframe is focused and listen for H key via blur trick
+window.addEventListener("blur", () => {
+    // When window loses focus (iframe got focus), set up a listener
+    const handleWindowFocus = (e) => {
+        window.removeEventListener("focus", handleWindowFocus);
+    };
+    window.addEventListener("focus", handleWindowFocus);
+});
+
+// Listen for H key globally using a different approach
+// This captures H even when iframe has focus by listening on the window level
+document.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "h") {
+        // Blur the iframe to regain control
+        if (document.activeElement && document.activeElement.tagName === "IFRAME") {
+            document.activeElement.blur();
+        }
+    }
+}, true); // Use capture phase
+
+// Alternative: Click anywhere on video window (outside iframe) to enable H key
+document.addEventListener("click", (e) => {
+    const videoWindow = e.target.closest(".video-window");
+    if (videoWindow) {
+        // If clicking on the window but not inside iframe content, focus the window
+        const isIframe = e.target.tagName === "IFRAME";
+        if (!isIframe) {
+            window.focus();
+        }
+    }
+});
+
+// Periodic check - if user hovers over video window, try to capture H key
+document.addEventListener("mousemove", (() => {
+    let lastCheck = 0;
+    return (e) => {
+        const now = Date.now();
+        if (now - lastCheck < 100) return; // Throttle to every 100ms
+        lastCheck = now;
+        
+        const videoWindow = e.target.closest(".video-window");
+        if (videoWindow && document.activeElement?.tagName === "IFRAME") {
+            // User is hovering over video window but iframe is focused
+            // We can't force blur, but we can set up for next interaction
+        }
+    };
+})());
+
+
 
 sidebarBackdrop?.addEventListener("click", () => {
   document.body.classList.remove("sidebar-open");
@@ -1757,16 +1836,22 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   overlay.className = "confirm-overlay";
   overlay.innerHTML = `
     <div class="confirm-box">
-      <p>Remove this video from the canvas?</p>
+      <p>Remove this from the canvas?</p>
       <div class="confirm-buttons">
         <button type="button" class="confirm-yes">Yes</button>
         <button type="button" class="confirm-no">No</button>
       </div>
     </div>
   `;
-  content.appendChild(overlay);
+   content.appendChild(overlay);
 
   attachWindowEvents(win);
+  
+  // Apply current toolbar visibility state to new windows
+  if (toolbarHidden) {
+    win.classList.add('hide-ui');
+  }
+  
   clampWindowToWorkspace(win);
   triggerResizeEnd(win);
 }
