@@ -23,6 +23,37 @@ let zCounter = 10;
 let activeAction = null;
 let rafId = null;
 
+// ==========================
+// Drag Overlay (prevents iframe from capturing events)
+// ==========================
+let dragOverlay = null;
+
+function showDragOverlay(cursorStyle) {
+  if (!dragOverlay) {
+    dragOverlay = document.createElement('div');
+    dragOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 99999;
+      cursor: ${cursorStyle || 'default'};
+      background: transparent;
+    `;
+  }
+  dragOverlay.style.cursor = cursorStyle || 'default';
+  if (!dragOverlay.parentElement) {
+    document.body.appendChild(dragOverlay);
+  }
+}
+
+function hideDragOverlay() {
+  if (dragOverlay && dragOverlay.parentElement) {
+    dragOverlay.remove();
+  }
+}
+
 const winHooks = new WeakMap();
 const resizeTimers = new WeakMap();
 const winMeta = new WeakMap();
@@ -1883,37 +1914,36 @@ function attachWindowEvents(win) {
     refreshWindow(win);
   });
 
-moveHandle.addEventListener("mousedown", (e) => {
-  e.preventDefault();
+  moveHandle.addEventListener("mousedown", (e) => {
+    e.preventDefault();
 
-  // 1. Increment the global z-index counter and apply it to this window
-  win.style.zIndex = ++zCounter;
+    win.style.zIndex = ++zCounter;
 
-  const rect = win.getBoundingClientRect();
-  const workspaceRect = workspace.getBoundingClientRect();
+    const rect = win.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
 
-  activeAction = {
-    type: "move",
-    win,
-    offsetX: e.clientX - rect.left,
-    offsetY: e.clientY - rect.top,
-    workspaceRect,
-    width: rect.width,
-    height: rect.height,
-    left: rect.left - workspaceRect.left,
-    top: rect.top - workspaceRect.top,
-  };
+    activeAction = {
+      type: "move",
+      win,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      workspaceRect,
+      width: rect.width,
+      height: rect.height,
+      left: rect.left - workspaceRect.left,
+      top: rect.top - workspaceRect.top,
+    };
 
-  win.classList.add("moving");
-});
+    win.classList.add("moving");
+    showDragOverlay('grabbing');
+  });
 
-   const handles = win.querySelectorAll(".resize-handle");
+  const handles = win.querySelectorAll(".resize-handle");
   handles.forEach((handle) => {
     handle.addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      // Bring this window to the top and keep it there
       win.style.zIndex = String(zCounter++);
 
       const corner = handle.dataset.corner;
@@ -1924,6 +1954,13 @@ moveHandle.addEventListener("mousedown", (e) => {
       const startTop = parseFloat(style.top);
       const startWidth = parseFloat(style.width);
       const startHeight = parseFloat(style.height);
+
+      const cursorMap = {
+        'nw': 'nwse-resize',
+        'ne': 'nesw-resize',
+        'sw': 'nesw-resize',
+        'se': 'nwse-resize'
+      };
 
       activeAction = {
         type: "resize",
@@ -1943,6 +1980,8 @@ moveHandle.addEventListener("mousedown", (e) => {
       };
 
       win.classList.add("resizing");
+      showDragOverlay(cursorMap[corner] || 'se-resize');
+
       if (sizeIndicator) {
         sizeIndicator.textContent = Math.round(startWidth) + " × " + Math.round(startHeight);
       }
@@ -2125,6 +2164,8 @@ document.addEventListener("mouseup", () => {
 
   if (type === "move") win.classList.remove("moving");
   if (type === "resize") win.classList.remove("resizing");
+
+  hideDragOverlay();
 
   clampWindowToWorkspace(win);
 

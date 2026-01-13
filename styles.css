@@ -1161,3 +1161,74 @@ body.sidebar-open .tab-svg rect {
     right: -4px;
     bottom: -4px;
 }
+
+
+
+/* ===========================
+   Cross-Browser Drag/Resize Fix
+   =========================== */
+
+/* Disable pointer events on content during drag/resize */
+.video-window.moving .video-content,
+.video-window.resizing .video-content {
+  pointer-events: none !important;
+}
+
+.video-window.moving .video-content iframe,
+.video-window.resizing .video-content iframe,
+.video-window.moving .video-content video,
+.video-window.resizing .video-content video,
+.video-window.moving .video-content embed,
+.video-window.resizing .video-content embed,
+.video-window.moving .video-content object,
+.video-window.resizing .video-content object {
+  pointer-events: none !important;
+}
+
+/* Prevent text selection during drag */
+.video-window.moving,
+.video-window.resizing {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Ensure handles have proper touch action */
+.move-handle,
+.resize-handle {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Ensure resize handles are above content */
+.resize-handle {
+  z-index: 100;
+}
+
+/* Drag overlay styles */
+#drag-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999999;
+  background: transparent;
+  touch-action: none;
+}
+
+/* Body class during drag for extra safety */
+body.dragging {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+body.dragging iframe,
+body.dragging video,
+body.dragging embed,
+body.dragging object {
+  pointer-events: none !important;
+}
