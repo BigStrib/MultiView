@@ -1064,6 +1064,28 @@ body.sidebar-open .tab-svg rect {
   cursor: grabbing;
 }
 
+
+
+/* Middle resize handles (width-only, for hiding vertical video bars) */
+.resize-ml {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-mr {
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+
+
+
+
+
 /* Copy button */
 .copy-btn {
   font-size: 13px;
@@ -1231,4 +1253,47 @@ body.dragging video,
 body.dragging embed,
 body.dragging object {
   pointer-events: none !important;
+
 }
+
+
+/* =========================
+   Cropping Mode (Middle Handles)
+   ========================= */
+
+/* When cropping is active, the content clips the oversized iframe */
+.video-window.cropping .video-content {
+  overflow: hidden !important;
+  position: absolute;
+  inset: 0;
+}
+
+/* The iframe stays at its original size (--crop-width) and gets centered/clipped */
+.video-window.cropping .video-content iframe,
+.video-window.cropping .video-content video,
+.video-window.cropping .video-content embed,
+.video-window.cropping .video-content object {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: var(--crop-width) !important;
+  min-width: var(--crop-width) !important;
+  max-width: none !important;
+  height: 100% !important;
+}
+
+/* Visual indicator that cropping is active - subtle border */
+.video-window.cropping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Hide the crop indicator border on hover to not interfere with UI */
+.video-window.cropping:hover::after {
+  border-color: transparent;
+}
+

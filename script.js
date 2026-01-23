@@ -196,7 +196,6 @@ function getDisplayTitle(provider, url) {
     return providerNames[provider];
   }
 
-  // If url looks like HTML (embed code), try to extract from iframe src
   if (url && url.includes("<")) {
     const temp = document.createElement("div");
     temp.innerHTML = url;
@@ -207,7 +206,6 @@ function getDisplayTitle(provider, url) {
         return extractSiteName(src);
       }
     }
-    // Try to find any recognizable URL in the embed
     const match = url.match(/https?:\/\/([^"'\s<>]+)/i);
     if (match) {
       return extractSiteName("https://" + match[1]);
@@ -238,7 +236,6 @@ sidebarTab?.addEventListener("click", toggleSidebar);
 // Global flag to track UI visibility state
 let toolbarHidden = false;
 
-// Function to toggle toolbar visibility
 function toggleToolbarVisibility() {
     toolbarHidden = !toolbarHidden;
     document.querySelectorAll('.video-window').forEach(w => {
@@ -249,54 +246,42 @@ function toggleToolbarVisibility() {
         }
     });
     
-    // Remove focus from any element
     if (document.activeElement && document.activeElement.blur) {
         document.activeElement.blur();
     }
 }
 
-// Main keydown listener
 document.addEventListener("keydown", (e) => {
-    // Skip if typing in an input
     const tag = (e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea") return;
 
-    // H key toggles toolbar elements on ALL windows
     if (e.key.toLowerCase() === "h") {
         toggleToolbarVisibility();
     }
 
-    // Existing Shift logic
     if (e.key === "Shift" && !e.repeat) {
         toggleSidebar();
     }
 });
 
-// Detect when iframe is focused and listen for H key via blur trick
 window.addEventListener("blur", () => {
-    // When window loses focus (iframe got focus), set up a listener
     const handleWindowFocus = (e) => {
         window.removeEventListener("focus", handleWindowFocus);
     };
     window.addEventListener("focus", handleWindowFocus);
 });
 
-// Listen for H key globally using a different approach
-// This captures H even when iframe has focus by listening on the window level
 document.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === "h") {
-        // Blur the iframe to regain control
         if (document.activeElement && document.activeElement.tagName === "IFRAME") {
             document.activeElement.blur();
         }
     }
-}, true); // Use capture phase
+}, true);
 
-// Alternative: Click anywhere on video window (outside iframe) to enable H key
 document.addEventListener("click", (e) => {
     const videoWindow = e.target.closest(".video-window");
     if (videoWindow) {
-        // If clicking on the window but not inside iframe content, focus the window
         const isIframe = e.target.tagName === "IFRAME";
         if (!isIframe) {
             window.focus();
@@ -304,23 +289,18 @@ document.addEventListener("click", (e) => {
     }
 });
 
-// Periodic check - if user hovers over video window, try to capture H key
 document.addEventListener("mousemove", (() => {
     let lastCheck = 0;
     return (e) => {
         const now = Date.now();
-        if (now - lastCheck < 100) return; // Throttle to every 100ms
+        if (now - lastCheck < 100) return;
         lastCheck = now;
         
         const videoWindow = e.target.closest(".video-window");
         if (videoWindow && document.activeElement?.tagName === "IFRAME") {
-            // User is hovering over video window but iframe is focused
-            // We can't force blur, but we can set up for next interaction
         }
     };
 })());
-
-
 
 sidebarBackdrop?.addEventListener("click", () => {
   document.body.classList.remove("sidebar-open");
@@ -398,18 +378,17 @@ function createIframeEl({ src, title, allow, referrerPolicy, scrollable = false 
   );
   iframe.setAttribute("referrerpolicy", referrerPolicy || "strict-origin-when-cross-origin");
 
-  // Style overrides for global top-alignment
   iframe.style.width = "100%";
   iframe.style.height = "100%";
   iframe.style.border = "none";
   iframe.style.display = "block";
-  iframe.style.verticalAlign = "top"; // Ensures no baseline gaps at the top
+  iframe.style.verticalAlign = "top";
   
-  // Control scrolling based on content type
   iframe.scrolling = scrollable ? "auto" : "no";
 
   return iframe;
 }
+
 // ==========================
 // YouTube Provider
 // ==========================
@@ -542,7 +521,6 @@ function detectProviderFromSrc(src) {
   
   const srcLower = src.toLowerCase();
   
-  // Video Platforms
   if (srcLower.includes("youtube.com/embed") || 
       srcLower.includes("youtube-nocookie.com/embed") ||
       srcLower.includes("youtube.com/v/")) {
@@ -617,7 +595,6 @@ function detectProviderFromSrc(src) {
     return { provider: "ted", aspect: 16 / 9 };
   }
   
-  // Music/Audio Platforms
   if (srcLower.includes("open.spotify.com/embed")) {
     if (srcLower.includes("/track/")) {
       return { provider: "spotify", aspect: 352 / 152 };
@@ -679,7 +656,6 @@ function detectProviderFromSrc(src) {
     return { provider: "anchor", aspect: 16 / 5 };
   }
   
-  // Podcast platforms
   if (srcLower.includes("player.simplecast.com")) {
     return { provider: "simplecast", aspect: 16 / 5 };
   }
@@ -704,7 +680,6 @@ function detectProviderFromSrc(src) {
     return { provider: "spreaker", aspect: 16 / 5 };
   }
   
-  // Social Media Platforms
   if (srcLower.includes("tiktok.com/embed") || srcLower.includes("tiktok.com/player")) {
     return { provider: "tiktok", aspect: 9 / 16, scrollable: true };
   }
@@ -746,7 +721,6 @@ function detectProviderFromSrc(src) {
     return { provider: "bluesky", aspect: 4 / 5, scrollable: true };
   }
   
-  // Mastodon (various instances)
   if (srcLower.includes("/embed") && (
       srcLower.includes("mastodon") || 
       srcLower.includes("mstdn") ||
@@ -757,20 +731,13 @@ function detectProviderFromSrc(src) {
     return { provider: "mastodon", aspect: 4 / 5, scrollable: true };
   }
   
-  // Image/GIF Platforms
-// Check for the specific embed assets or the general domain
-const isPinterestEmbed = srcLower.includes("assets.pinterest.com/ext/embed.html");
-const isGeneralPinterest = srcLower.includes("pinterest.com") && srcLower.includes("embed");
+  const isPinterestEmbed = srcLower.includes("assets.pinterest.com/ext/embed.html");
+  const isGeneralPinterest = srcLower.includes("pinterest.com") && srcLower.includes("embed");
 
-if (isPinterestEmbed || isGeneralPinterest) {
-  return { 
-    provider: "pinterest", 
-    // The specific URL you gave has a fixed height/width 
-    // 236/439 is roughly 0.537, which is close to 9:16 or 2:3
-    aspect: 236 / 439, 
-    scrollable: false // Embeds are usually fixed size
-  };
-}
+  if (isPinterestEmbed || isGeneralPinterest) {
+    return { provider: "pinterest", aspect: 236 / 439, scrollable: false };
+  }
+  
   if (srcLower.includes("giphy.com/embed")) {
     return { provider: "giphy", aspect: 1 };
   }
@@ -795,7 +762,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "coub", aspect: 16 / 9 };
   }
   
-  // Code/Development Platforms
   if (srcLower.includes("codepen.io") && srcLower.includes("embed")) {
     return { provider: "codepen", aspect: 16 / 9, scrollable: true };
   }
@@ -816,7 +782,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "glitch", aspect: 16 / 9, scrollable: true };
   }
   
-  // Design/Collaboration Platforms
   if (srcLower.includes("figma.com/embed") || srcLower.includes("figma.com/file")) {
     return { provider: "figma", aspect: 16 / 9, scrollable: true };
   }
@@ -829,7 +794,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "miro", aspect: 16 / 9, scrollable: true };
   }
   
-  // Productivity/Forms Platforms
   if (srcLower.includes("notion.so") || srcLower.includes("notion.site")) {
     return { provider: "notion", aspect: 16 / 9, scrollable: true };
   }
@@ -858,7 +822,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "google-slides", aspect: 16 / 9 };
   }
   
-  // Presentation Platforms
   if (srcLower.includes("slideshare.net") && srcLower.includes("embed")) {
     return { provider: "slideshare", aspect: 16 / 9 };
   }
@@ -867,7 +830,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "prezi", aspect: 16 / 9 };
   }
   
-  // Cloud Storage/Preview
   if (srcLower.includes("drive.google.com") && srcLower.includes("preview")) {
     return { provider: "googledrive", aspect: 16 / 9 };
   }
@@ -884,12 +846,10 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "box", aspect: 16 / 9, scrollable: true };
   }
   
-  // Maps
   if (srcLower.includes("google.com/maps") || srcLower.includes("maps.google.com")) {
     return { provider: "googlemaps", aspect: 4 / 3, scrollable: true };
   }
   
-  // Chat/Community
   if (srcLower.includes("discord.com/widget") || srcLower.includes("discordapp.com/widget")) {
     return { provider: "discord", aspect: 350 / 500, scrollable: true };
   }
@@ -898,7 +858,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "twitch-chat", aspect: 350 / 500, scrollable: true };
   }
   
-  // Event Platforms
   if (srcLower.includes("calendly.com")) {
     return { provider: "calendly", aspect: 16 / 9, scrollable: true };
   }
@@ -911,7 +870,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "meetup", aspect: 16 / 9, scrollable: true };
   }
   
-  // Educational/Project Management
   if (srcLower.includes("padlet.com/embed")) {
     return { provider: "padlet", aspect: 16 / 9, scrollable: true };
   }
@@ -920,7 +878,6 @@ if (isPinterestEmbed || isGeneralPinterest) {
     return { provider: "trello", aspect: 16 / 9, scrollable: true };
   }
   
-  // Publishing Platforms
   if (srcLower.includes("medium.com") && srcLower.includes("embed")) {
     return { provider: "medium", aspect: 4 / 5, scrollable: true };
   }
@@ -1246,7 +1203,7 @@ function refreshWindow(win) {
 }
 
 // ==========================
-// Copy URL/Embed to Clipboard (with temporary ✓ icon)
+// Copy URL/Embed to Clipboard
 // ==========================
 function copyWindowUrl(win) {
   const meta = winMeta.get(win);
@@ -1257,8 +1214,8 @@ function copyWindowUrl(win) {
   const copyBtn = win.querySelector(".copy-btn");
   if (!copyBtn) return;
 
-  const COPY_ICON = "⧉";  // normal copy icon
-  const CHECK_ICON = "✓"; // shown briefly after copy
+  const COPY_ICON = "⧉";
+  const CHECK_ICON = "✓";
 
   function showCopiedState() {
     copyBtn.innerHTML = CHECK_ICON;
@@ -1275,7 +1232,6 @@ function copyWindowUrl(win) {
     }, 1000);
   }
 
-  // Modern API
   if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(textToCopy)
       .then(showCopiedState)
@@ -1284,7 +1240,6 @@ function copyWindowUrl(win) {
     fallbackCopy();
   }
 
-  // Fallback for older browsers
   function fallbackCopy() {
     const textarea = document.createElement("textarea");
     textarea.value = textToCopy;
@@ -1301,12 +1256,11 @@ function copyWindowUrl(win) {
     }
     document.body.removeChild(textarea);
   }
-} 
+}
 
 // ==========================
 // Embed Blockquote Processing
 // ==========================
-
 function extractFirstMatchingLink(root, predicate) {
   const links = root.querySelectorAll("a[href]");
   for (const a of links) {
@@ -1317,11 +1271,9 @@ function extractFirstMatchingLink(root, predicate) {
 }
 
 function processBlockquoteEmbed(temp) {
-  // Twitter/X - multiple formats
   const twitterBlock = temp.querySelector(
     'blockquote.twitter-tweet, blockquote.twitter-video, ' +
-    'blockquote[class*="twitter"], [data-tweet-id], ' +
-    'div.twitter-tweet'
+    'blockquote[class*="twitter"], [data-tweet-id], div.twitter-tweet'
   );
   if (twitterBlock) {
     const tweetUrl = extractFirstMatchingLink(temp, (u) => 
@@ -1332,11 +1284,9 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // Instagram - multiple formats
   const instagramBlock = temp.querySelector(
     'blockquote.instagram-media, blockquote[data-instgrm-permalink], ' +
-    'blockquote[data-instgrm-captioned], [class*="instagram-embed"], ' +
-    'div.instagram-media'
+    'blockquote[data-instgrm-captioned], [class*="instagram-embed"], div.instagram-media'
   );
   if (instagramBlock) {
     const instaUrl = instagramBlock.getAttribute("data-instgrm-permalink") ||
@@ -1349,7 +1299,6 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // TikTok
   const tiktokBlock = temp.querySelector(
     'blockquote.tiktok-embed, blockquote[cite*="tiktok.com"], ' +
     '[data-video-id][class*="tiktok"], div.tiktok-embed'
@@ -1365,7 +1314,6 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // Reddit
   const redditBlock = temp.querySelector(
     'blockquote.reddit-embed-bq, blockquote[class*="reddit"], ' +
     '[data-embed-created], div.reddit-embed'
@@ -1379,7 +1327,6 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // Threads (Meta)
   const threadsBlock = temp.querySelector(
     'blockquote.text-post-media, blockquote[cite*="threads.net"], ' +
     'blockquote[data-threads-permalink]'
@@ -1395,10 +1342,8 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // Bluesky
   const bskyBlock = temp.querySelector(
-    'blockquote[data-bluesky-uri], [class*="bluesky-embed"], ' +
-    'blockquote[cite*="bsky.app"]'
+    'blockquote[data-bluesky-uri], [class*="bluesky-embed"], blockquote[cite*="bsky.app"]'
   );
   if (bskyBlock) {
     const bskyUrl = bskyBlock.getAttribute("data-bluesky-uri") ||
@@ -1411,10 +1356,8 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // Tumblr
   const tumblrBlock = temp.querySelector(
-    'div.tumblr-post, [data-href*="tumblr.com"], ' +
-    'blockquote[class*="tumblr"]'
+    'div.tumblr-post, [data-href*="tumblr.com"], blockquote[class*="tumblr"]'
   );
   if (tumblrBlock) {
     const tumblrUrl = tumblrBlock.getAttribute("data-href") ||
@@ -1426,10 +1369,7 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // LinkedIn
-  const linkedinBlock = temp.querySelector(
-    '[data-li-embed], blockquote[class*="linkedin"]'
-  );
+  const linkedinBlock = temp.querySelector('[data-li-embed], blockquote[class*="linkedin"]');
   if (linkedinBlock) {
     const linkedinUrl = extractFirstMatchingLink(temp, (u) =>
       /https?:\/\/(www\.)?linkedin\.com\/(posts|embed|pulse)\//i.test(u)
@@ -1439,10 +1379,7 @@ function processBlockquoteEmbed(temp) {
     }
   }
 
-  // Mastodon (various instances)
-  const mastodonBlock = temp.querySelector(
-    'iframe[src*="/embed"], [class*="mastodon-embed"]'
-  );
+  const mastodonBlock = temp.querySelector('iframe[src*="/embed"], [class*="mastodon-embed"]');
   if (mastodonBlock) {
     const src = mastodonBlock.getAttribute("src");
     if (src && src.includes("/embed")) {
@@ -1456,36 +1393,28 @@ function processBlockquoteEmbed(temp) {
 // ==========================
 // Embed Div Processing
 // ==========================
-
 function processDivEmbed(temp) {
-  // Facebook video
   const fbVideoDiv = temp.querySelector(
     '.fb-video[data-href], .fb-video[data-uri], ' +
-    'div[data-href*="facebook.com"], div[data-uri*="facebook.com"], ' +
-    'div[data-href*="fb.watch"]'
+    'div[data-href*="facebook.com"], div[data-uri*="facebook.com"], div[data-href*="fb.watch"]'
   );
   if (fbVideoDiv) {
-    const href = fbVideoDiv.getAttribute("data-href") || 
-                 fbVideoDiv.getAttribute("data-uri") || "";
+    const href = fbVideoDiv.getAttribute("data-href") || fbVideoDiv.getAttribute("data-uri") || "";
     if (href) {
       return { type: "url", url: href };
     }
   }
 
-  // Facebook post
   const fbPostDiv = temp.querySelector('.fb-post[data-href], .fb-post[data-uri]');
   if (fbPostDiv) {
-    const href = fbPostDiv.getAttribute("data-href") ||
-                 fbPostDiv.getAttribute("data-uri") || "";
+    const href = fbPostDiv.getAttribute("data-href") || fbPostDiv.getAttribute("data-uri") || "";
     if (href) {
       return { type: "url", url: href };
     }
   }
 
-  // Pinterest
   const pinDiv = temp.querySelector(
-    'a[data-pin-do="embedPin"], [data-pin-id], ' +
-    '[class*="pinterest-embed"], a[href*="pinterest.com/pin/"]'
+    'a[data-pin-do="embedPin"], [data-pin-id], [class*="pinterest-embed"], a[href*="pinterest.com/pin/"]'
   );
   if (pinDiv) {
     const pinUrl = pinDiv.getAttribute("href") ||
@@ -1497,10 +1426,7 @@ function processDivEmbed(temp) {
     }
   }
 
-  // Spotify (sometimes embedded as divs)
-  const spotifyDiv = temp.querySelector(
-    '[data-spotify-id], [class*="spotify-embed"]'
-  );
+  const spotifyDiv = temp.querySelector('[data-spotify-id], [class*="spotify-embed"]');
   if (spotifyDiv) {
     const spotifyUrl = extractFirstMatchingLink(temp, (u) =>
       /https?:\/\/open\.spotify\.com\/(track|album|playlist|episode|show)\//i.test(u)
@@ -1510,10 +1436,7 @@ function processDivEmbed(temp) {
     }
   }
 
-  // SoundCloud
-  const soundcloudDiv = temp.querySelector(
-    '[data-soundcloud], [class*="soundcloud-embed"]'
-  );
+  const soundcloudDiv = temp.querySelector('[data-soundcloud], [class*="soundcloud-embed"]');
   if (soundcloudDiv) {
     const soundcloudUrl = extractFirstMatchingLink(temp, (u) =>
       /https?:\/\/(www\.)?soundcloud\.com\//i.test(u)
@@ -1523,22 +1446,15 @@ function processDivEmbed(temp) {
     }
   }
 
-  // YouTube (sometimes in divs)
-  const ytDiv = temp.querySelector(
-    '[data-youtube-id], [data-video-id], [class*="youtube-embed"]'
-  );
+  const ytDiv = temp.querySelector('[data-youtube-id], [data-video-id], [class*="youtube-embed"]');
   if (ytDiv) {
-    const ytId = ytDiv.getAttribute("data-youtube-id") || 
-                 ytDiv.getAttribute("data-video-id");
+    const ytId = ytDiv.getAttribute("data-youtube-id") || ytDiv.getAttribute("data-video-id");
     if (ytId && /^[A-Za-z0-9_-]{11}$/.test(ytId)) {
       return { type: "url", url: `https://www.youtube.com/watch?v=${ytId}` };
     }
   }
 
-  // Giphy
-  const giphyDiv = temp.querySelector(
-    '[data-giphy-id], [class*="giphy-embed"]'
-  );
+  const giphyDiv = temp.querySelector('[data-giphy-id], [class*="giphy-embed"]');
   if (giphyDiv) {
     const giphyId = giphyDiv.getAttribute("data-giphy-id");
     if (giphyId) {
@@ -1573,7 +1489,6 @@ function createVideoFromUrl(rawUrl) {
 // ==========================
 // Helper: Create Window from URL but Store Original Embed
 // ==========================
-
 function createVideoWindowFromUrlWithOriginal(url, originalEmbed) {
   const trimmed = url.trim();
   if (!trimmed) return;
@@ -1587,7 +1502,7 @@ function createVideoWindowFromUrlWithOriginal(url, originalEmbed) {
     aspectRatio: spec.aspect,
     mountContent: spec.mount,
     provider: spec.provider,
-    url: originalEmbed, // Store original embed code instead of converted URL
+    url: originalEmbed,
     scrollable: spec.scrollable,
   });
 }
@@ -1595,15 +1510,12 @@ function createVideoWindowFromUrlWithOriginal(url, originalEmbed) {
 // ==========================
 // Video Creation from Embed
 // ==========================
-
 function createVideoFromEmbed(embedHtml) {
   const html = embedHtml.trim();
   if (!html) return;
 
-  // Store original embed code for copy functionality
   const originalInput = html;
 
-  // If it's just a URL (no HTML tags), use URL handler but preserve original
   if (!/[<]/.test(html) && /^https?:\/\//i.test(html)) {
     createVideoFromUrl(html);
     return;
@@ -1612,21 +1524,18 @@ function createVideoFromEmbed(embedHtml) {
   const temp = document.createElement("div");
   temp.innerHTML = html;
 
-  // Try blockquote-based embeds first
   const blockquoteResult = processBlockquoteEmbed(temp);
   if (blockquoteResult?.type === "url") {
     createVideoWindowFromUrlWithOriginal(blockquoteResult.url, originalInput);
     return;
   }
 
-  // Try div-based embeds
   const divResult = processDivEmbed(temp);
   if (divResult?.type === "url") {
     createVideoWindowFromUrlWithOriginal(divResult.url, originalInput);
     return;
   }
 
-  // Check for Facebook plugin iframe and preserve original
   const firstIframe = temp.querySelector("iframe");
   if (firstIframe) {
     const src = firstIframe.getAttribute("src") || "";
@@ -1637,10 +1546,8 @@ function createVideoFromEmbed(embedHtml) {
     }
   }
 
-  // Remove scripts for safety but preserve structure
   temp.querySelectorAll("script").forEach((s) => s.remove());
 
-  // Detect provider and aspect from media elements
   let detectedProvider = "generic";
   let aspect = 16 / 9;
   let scrollable = false;
@@ -1653,12 +1560,10 @@ function createVideoFromEmbed(embedHtml) {
                 first.getAttribute("data") || 
                 first.getAttribute("data-src") || "";
     
-    // Detect provider from src
     const detected = detectProviderFromSrc(src);
     detectedProvider = detected.provider;
     scrollable = detected.scrollable || false;
     
-    // Try to get aspect from attributes first
     const wAttr = parseInt(first.getAttribute("width"), 10);
     const hAttr = parseInt(first.getAttribute("height"), 10);
 
@@ -1668,7 +1573,6 @@ function createVideoFromEmbed(embedHtml) {
       aspect = detected.aspect || 16 / 9;
     }
 
-    // Normalize media elements for responsive display
     mediaEls.forEach((el) => {
       el.removeAttribute("width");
       el.removeAttribute("height");
@@ -1686,7 +1590,6 @@ function createVideoFromEmbed(embedHtml) {
       if (tagName === "iframe") {
         el.style.display = "block";
         el.scrolling = scrollable ? "auto" : "no";
-        // Ensure proper attributes
         el.setAttribute("allowfullscreen", "true");
         el.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen");
       }
@@ -1696,7 +1599,6 @@ function createVideoFromEmbed(embedHtml) {
     });
   }
 
-  // Handle object/embed elements
   const objectEls = temp.querySelectorAll("object, embed");
   objectEls.forEach((el) => {
     el.style.width = "100%";
@@ -1708,12 +1610,11 @@ function createVideoFromEmbed(embedHtml) {
   createVideoWindow({
     aspectRatio: aspect,
     provider: detectedProvider,
-    url: originalInput, // Store original embed code for copy
+    url: originalInput,
     scrollable: scrollable,
     mountContent(contentEl) {
       contentEl.innerHTML = processedHtml;
 
-      // Re-apply styles after mounting
       const anyMedia = contentEl.querySelectorAll("iframe, embed, video, object, audio");
       anyMedia.forEach((el) => {
         el.style.width = "100%";
@@ -1764,7 +1665,6 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   const win = document.createElement("div");
   win.className = "video-window";
   
-  // Add provider as data attribute for CSS targeting
   win.dataset.provider = provider;
   win.dataset.scrollable = scrollable ? "true" : "false";
 
@@ -1785,7 +1685,6 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   const toolbar = document.createElement("div");
   toolbar.className = "video-toolbar";
 
-  // Left group: Move + Copy
   const leftGroup = document.createElement("div");
   leftGroup.className = "toolbar-group toolbar-left";
 
@@ -1800,14 +1699,12 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   copyBtn.className = "toolbar-btn copy-btn";
   copyBtn.type = "button";
   copyBtn.innerHTML = "⧉";
-  // Set initial title based on whether URL is embed code
   copyBtn.title = url.includes("<") ? "Copy embed" : "Copy URL";
   copyBtn.setAttribute("aria-label", url.includes("<") ? "Copy embed code" : "Copy URL");
 
   leftGroup.appendChild(moveHandle);
   leftGroup.appendChild(copyBtn);
 
-  // Center: Title
   const centerGroup = document.createElement("div");
   centerGroup.className = "toolbar-group toolbar-center";
 
@@ -1816,7 +1713,6 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   titleEl.textContent = getDisplayTitle(provider, url);
   centerGroup.appendChild(titleEl);
 
-  // Right group: Size + Refresh + Close
   const rightGroup = document.createElement("div");
   rightGroup.className = "toolbar-group toolbar-right";
 
@@ -1848,10 +1744,20 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
   const content = document.createElement("div");
   content.className = "video-content";
 
+  // Corner resize handles (aspect-ratio locked)
   ["nw", "ne", "sw", "se"].forEach((corner) => {
     const h = document.createElement("div");
     h.className = `resize-handle resize-${corner}`;
     h.dataset.corner = corner;
+    win.appendChild(h);
+  });
+
+  // Middle resize handles (crop handles)
+  ["ml", "mr"].forEach((side) => {
+    const h = document.createElement("div");
+    h.className = `resize-handle resize-${side}`;
+    h.dataset.corner = side;
+    h.title = "Crop width (hide bars)";
     win.appendChild(h);
   });
 
@@ -1874,11 +1780,10 @@ function createVideoWindow({ aspectRatio = 16 / 9, mountContent, provider = "gen
       </div>
     </div>
   `;
-   content.appendChild(overlay);
+  content.appendChild(overlay);
 
   attachWindowEvents(win);
   
-  // Apply current toolbar visibility state to new windows
   if (toolbarHidden) {
     win.classList.add('hide-ui');
   }
@@ -1916,7 +1821,6 @@ function attachWindowEvents(win) {
 
   moveHandle.addEventListener("mousedown", (e) => {
     e.preventDefault();
-
     win.style.zIndex = ++zCounter;
 
     const rect = win.getBoundingClientRect();
@@ -1954,12 +1858,18 @@ function attachWindowEvents(win) {
       const startTop = parseFloat(style.top);
       const startWidth = parseFloat(style.width);
       const startHeight = parseFloat(style.height);
+      const aspect = parseFloat(win.dataset.aspectRatio) || 16 / 9;
+
+      // Get current crop width if exists, otherwise use current width
+      let currentCropWidth = parseFloat(win.style.getPropertyValue('--crop-width')) || startWidth;
 
       const cursorMap = {
         'nw': 'nwse-resize',
         'ne': 'nesw-resize',
         'sw': 'nesw-resize',
-        'se': 'nwse-resize'
+        'se': 'nwse-resize',
+        'ml': 'ew-resize',
+        'mr': 'ew-resize'
       };
 
       activeAction = {
@@ -1971,12 +1881,13 @@ function attachWindowEvents(win) {
         startTop,
         startWidth,
         startHeight,
-        aspect: parseFloat(win.dataset.aspectRatio) || 16 / 9,
+        aspect,
         workspaceRect,
         left: startLeft,
         top: startTop,
         width: startWidth,
         height: startHeight,
+        currentCropWidth,
       };
 
       win.classList.add("resizing");
@@ -2079,7 +1990,7 @@ function applyActiveAction() {
   rafId = null;
   if (!activeAction) return;
 
-  const { win, type } = activeAction;
+  const { win, type, corner } = activeAction;
   if (!win) return;
 
   if (type === "move") {
@@ -2124,19 +2035,88 @@ document.addEventListener("mousemove", (e) => {
 
   if (activeAction.type === "resize") {
     const s = activeAction;
-    const { corner, startMouseX, startLeft, startTop, startWidth, startHeight, aspect } = s;
+    const { corner, startMouseX, startLeft, startTop, startWidth, startHeight, aspect, workspaceRect, win, currentCropWidth } = s;
 
     const dx = e.clientX - startMouseX;
+    const minWidth = 220;
+
+         // Middle handles: CROP mode
+    // The iframe stays at --crop-width, the container gets narrower
+    if (corner === "ml" || corner === "mr") {
+      const minCropWidth = 20; // Allow very aggressive cropping
+      
+      // First time cropping: set the crop width to current window width
+      if (!win.classList.contains("cropping")) {
+        win.style.setProperty('--crop-width', startWidth + 'px');
+        win.classList.add("cropping");
+        s.currentCropWidth = startWidth;
+      }
+
+      const cropWidth = s.currentCropWidth;
+      let newWidth, newLeft;
+
+      if (corner === "mr") {
+        // Right handle - shrink from right
+        newWidth = startWidth + dx;
+        newLeft = startLeft;
+      } else {
+        // Left handle - shrink from left
+        newWidth = startWidth - dx;
+        newLeft = startLeft + dx;
+      }
+
+      // No upper limit - can crop as much as user wants
+      // Only limit is minCropWidth at bottom and cropWidth at top
+      newWidth = clamp(newWidth, minCropWidth, cropWidth);
+
+      // Recalculate left for ml after clamping
+      if (corner === "ml") {
+        newLeft = startLeft + startWidth - newWidth;
+      }
+
+      // Keep within workspace
+      if (newLeft < 0) {
+        newLeft = 0;
+      }
+      if (newLeft + newWidth > workspaceRect.width) {
+        newWidth = workspaceRect.width - newLeft;
+      }
+
+      activeAction.left = newLeft;
+      activeAction.top = startTop;
+      activeAction.width = newWidth;
+      activeAction.height = startHeight;
+      requestRender();
+      return;
+    }
+
+        // Corner handles: aspect-ratio locked resize
+    // If cropping, use the CROPPED aspect ratio (current container dimensions)
+    // Otherwise use the original video aspect ratio
+    let effectiveAspect = aspect;
+    if (win.classList.contains("cropping")) {
+      effectiveAspect = startWidth / startHeight;
+    }
+
     let proposedWidth = corner === "ne" || corner === "se" ? startWidth + dx : startWidth - dx;
 
-    const minWidth = 220;
-    const maxWidth = getMaxWidthForCorner(s) || startWidth;
-
-    let newWidth = clamp(proposedWidth, minWidth, maxWidth);
-    let newHeight = newWidth / aspect;
-
+    // Calculate max width using effective aspect ratio
     const right = startLeft + startWidth;
     const bottom = startTop + startHeight;
+    const Ww = workspaceRect.width;
+    const Wh = workspaceRect.height;
+
+    let maxWidth;
+    switch (corner) {
+      case "se": maxWidth = Math.min(Ww - startLeft, (Wh - startTop) * effectiveAspect); break;
+      case "sw": maxWidth = Math.min(right, (Wh - startTop) * effectiveAspect); break;
+      case "ne": maxWidth = Math.min(Ww - startLeft, bottom * effectiveAspect); break;
+      case "nw": maxWidth = Math.min(right, bottom * effectiveAspect); break;
+      default: maxWidth = Ww;
+    }
+
+    let newWidth = clamp(proposedWidth, minWidth, maxWidth);
+    let newHeight = newWidth / effectiveAspect;
 
     let newLeft = startLeft;
     let newTop = startTop;
@@ -2146,6 +2126,13 @@ document.addEventListener("mousemove", (e) => {
       case "sw": newLeft = right - newWidth; break;
       case "ne": newTop = bottom - newHeight; break;
       case "nw": newLeft = right - newWidth; newTop = bottom - newHeight; break;
+    }
+
+    // If currently cropped, scale the crop-width proportionally
+    if (win.classList.contains("cropping")) {
+      const scale = newWidth / startWidth;
+      const newCropWidth = currentCropWidth * scale;
+      win.style.setProperty('--crop-width', newCropWidth + 'px');
     }
 
     activeAction.left = newLeft;
@@ -2158,7 +2145,7 @@ document.addEventListener("mousemove", (e) => {
 
 document.addEventListener("mouseup", () => {
   if (!activeAction) return;
-  const { win, type } = activeAction;
+  const { win, type, corner } = activeAction;
 
   applyActiveAction();
 
@@ -2170,6 +2157,11 @@ document.addEventListener("mouseup", () => {
   clampWindowToWorkspace(win);
 
   if (type === "resize") {
+    // Update the stored crop width after corner resize
+    if (win.classList.contains("cropping") && ['nw', 'ne', 'sw', 'se'].includes(corner)) {
+      const currentCrop = parseFloat(win.style.getPropertyValue('--crop-width')) || parseFloat(win.style.width);
+      win.style.setProperty('--crop-width', currentCrop + 'px');
+    }
     triggerResizeEnd(win);
   }
 
