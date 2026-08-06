@@ -1,1 +1,2 @@
 This is my most advanced multiplayer this multiplayer allows you to watch Youtube, Twitch, Kick, Rumble embed, also a ton of other sites using the embed feature.User pastes the URLS into the input the videos appear on the screen. User can move the videos around on the screen. They also have an option to resize each video. User can copy the video URL. Refresh the video and remove the video. 
+A better URL for this would be https://multiviewplayer.pages.dev/
